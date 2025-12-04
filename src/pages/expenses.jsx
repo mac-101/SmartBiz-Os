@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import FloatingBtn from "../components/floatingBtn";
 import { expense } from "../components/data";
+import { MinusIcon } from "lucide-react";
+
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState(expense);
@@ -19,8 +21,8 @@ export default function Expenses() {
   // Get date range for different time filters
   const getDateRange = (filter) => {
     const today = new Date();
-    
-    switch(filter) {
+
+    switch (filter) {
       case 'today':
         return getCurrentDate();
       case 'week':
@@ -72,7 +74,7 @@ export default function Expenses() {
     }
 
     // Apply sorting
-    switch(sortOrder) {
+    switch (sortOrder) {
       case 'newest':
         result.sort((a, b) => new Date(b.date) - new Date(a.date));
         break;
@@ -92,13 +94,15 @@ export default function Expenses() {
     setFilteredExpenses(result);
   }, [expenses, sortOrder, timeFilter, categoryFilter, selectedDate]);
 
+
+
   // Calculate totals based on filtered expenses
   const totalExpenses = filteredExpenses.reduce((acc, exp) => acc + exp.amount, 0);
-  const highestExpense = filteredExpenses.length > 0 
-    ? Math.max(...filteredExpenses.map(e => e.amount)) 
+  const highestExpense = filteredExpenses.length > 0
+    ? Math.max(...filteredExpenses.map(e => e.amount))
     : 0;
-  const averageExpense = filteredExpenses.length > 0 
-    ? totalExpenses / filteredExpenses.length 
+  const averageExpense = filteredExpenses.length > 0
+    ? totalExpenses / filteredExpenses.length
     : 0;
 
   // Get unique categories
@@ -106,89 +110,89 @@ export default function Expenses() {
 
   return (
     <div className="p-4 md:p-8 min-h-screen bg-linear-to-br from-gray-50 to-gray-100 space-y-8">
-      
+
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Expenses Management</h1>
           <p className="text-gray-600 mt-2">Track and manage all business expenditures</p>
         </div>
-        
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full md:w-auto">
-  {/* Total Expenses Card */}
-  <div className="bg-linear-to-r from-red-500 to-red-600 text-white p-5 rounded-2xl shadow-lg">
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
+          {/* Total Expenses Card */}
+          <div className="bg-linear-to-r from-red-500 to-red-600 text-white p-5 rounded-2xl shadow-lg">
+            <div className="flex flex-col h-full">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium opacity-90 truncate">Total Expenses</p>
+                  <p className="text-2xl font-bold truncate mt-1">{totalExpenses.toLocaleString()}₦</p>
+                </div>
+              </div>
+              <div className="mt-auto pt-3 border-t border-white/20">
+                <p className="text-xs opacity-80 truncate">
+                  {timeFilter === 'today' ? 'Today' :
+                    timeFilter === 'week' ? 'This Week' :
+                      timeFilter === 'month' ? 'This Month' :
+                        timeFilter === 'year' ? 'This Year' :
+                          categoryFilter !== 'all' ? categoryFilter :
+                            'All Time'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Highest Expense Card */}
+          <div className="bg-linear-to-r from-orange-500 to-orange-600 text-white p-5 rounded-2xl shadow-lg">
+            <div className="flex flex-col h-full">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium opacity-90 truncate">Highest Expense</p>
+                  <p className="text-2xl font-bold truncate mt-1">{highestExpense.toLocaleString()}₦</p>
+                </div>
+              </div>
+              <div className="mt-auto pt-3 border-t border-white/20">
+                <p className="text-xs opacity-80 truncate">
+                  {sortOrder === 'highest' ? 'Sorted by Highest' : 'Single transaction'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Average Expense Card */}
+          <div className="bg-linear-to-r from-amber-500 to-amber-600 text-white p-5 rounded-2xl shadow-lg">
+            <div className="flex flex-col h-full">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium opacity-90 truncate">Average Expense</p>
+                  <p className="text-2xl font-bold truncate mt-1">
+                    {averageExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })}₦
+                  </p>
+                </div>
+              </div>
+              <div className="mt-auto pt-3 border-t border-white/20">
+                <p className="text-xs opacity-80 truncate">
+                  Based on {filteredExpenses.length} records
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium opacity-90 truncate">Total Expenses</p>
-          <p className="text-2xl font-bold truncate mt-1">{totalExpenses.toLocaleString()}₦</p>
-        </div>
-      </div>
-      <div className="mt-auto pt-3 border-t border-white/20">
-        <p className="text-xs opacity-80 truncate">
-          {timeFilter === 'today' ? 'Today' : 
-           timeFilter === 'week' ? 'This Week' : 
-           timeFilter === 'month' ? 'This Month' : 
-           timeFilter === 'year' ? 'This Year' : 
-           categoryFilter !== 'all' ? categoryFilter : 
-           'All Time'}
-        </p>
-      </div>
-    </div>
-  </div>
-  
-  {/* Highest Expense Card */}
-  <div className="bg-linear-to-r from-orange-500 to-orange-600 text-white p-5 rounded-2xl shadow-lg">
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-          </svg>
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium opacity-90 truncate">Highest Expense</p>
-          <p className="text-2xl font-bold truncate mt-1">{highestExpense.toLocaleString()}₦</p>
-        </div>
-      </div>
-      <div className="mt-auto pt-3 border-t border-white/20">
-        <p className="text-xs opacity-80 truncate">
-          {sortOrder === 'highest' ? 'Sorted by Highest' : 'Single transaction'}
-        </p>
-      </div>
-    </div>
-  </div>
-  
-  {/* Average Expense Card */}
-  <div className="bg-linear-to-r from-amber-500 to-amber-600 text-white p-5 rounded-2xl shadow-lg">
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium opacity-90 truncate">Average Expense</p>
-          <p className="text-2xl font-bold truncate mt-1">
-            {averageExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })}₦
-          </p>
-        </div>
-      </div>
-      <div className="mt-auto pt-3 border-t border-white/20">
-        <p className="text-xs opacity-80 truncate">
-          Based on {filteredExpenses.length} records
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
       </div>
 
       {/* Filter and Sort Controls */}
@@ -198,10 +202,10 @@ export default function Expenses() {
             <h3 className="text-lg font-bold text-gray-900 mb-2">Filter & Sort Expenses</h3>
             <p className="text-gray-600 text-sm">Customize your view based on time, category, and order</p>
           </div>
-          
+
           <div className="flex flex-wrap gap-3">
             {/* Reset Filters Button */}
-            <button 
+            <button
               onClick={() => {
                 setTimeFilter('all');
                 setCategoryFilter('all');
@@ -212,7 +216,7 @@ export default function Expenses() {
             >
               Reset Filters
             </button>
-            
+
             {/* Export Button */}
             <button className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors text-sm font-medium flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,7 +232,7 @@ export default function Expenses() {
           {/* Time Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Time Period</label>
-            <select 
+            <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -240,7 +244,7 @@ export default function Expenses() {
               <option value="year">Last Year</option>
               <option value="custom">Custom Date</option>
             </select>
-            
+
             {/* Custom Date Picker */}
             {timeFilter === 'custom' && (
               <input
@@ -255,7 +259,7 @@ export default function Expenses() {
           {/* Category Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <select 
+            <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -271,7 +275,7 @@ export default function Expenses() {
           {/* Sort Order */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-            <select 
+            <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -324,7 +328,7 @@ export default function Expenses() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  <button 
+                  <button
                     onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
                     className="flex items-center gap-2 hover:text-gray-900"
                   >
@@ -344,7 +348,7 @@ export default function Expenses() {
                   Vendor
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  <button 
+                  <button
                     onClick={() => setSortOrder(sortOrder === 'highest' ? 'lowest' : 'highest')}
                     className="flex items-center gap-2 hover:text-gray-900"
                   >
@@ -367,13 +371,12 @@ export default function Expenses() {
                       <div className="text-sm font-medium text-gray-900">#{expense.id.toString().padStart(3, '0')}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        expense.category === 'Utilities' ? 'bg-blue-50 text-blue-700' :
-                        expense.category === 'Salaries' ? 'bg-purple-50 text-purple-700' :
-                        expense.category === 'Marketing' ? 'bg-pink-50 text-pink-700' :
-                        expense.category === 'Office Supplies' ? 'bg-green-50 text-green-700' :
-                        'bg-gray-50 text-gray-700'
-                      }`}>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${expense.category === 'Utilities' ? 'bg-blue-50 text-blue-700' :
+                          expense.category === 'Salaries' ? 'bg-purple-50 text-purple-700' :
+                            expense.category === 'Marketing' ? 'bg-pink-50 text-pink-700' :
+                              expense.category === 'Office Supplies' ? 'bg-green-50 text-green-700' :
+                                'bg-gray-50 text-gray-700'
+                        }`}>
                         {expense.category}
                       </span>
                     </td>
@@ -387,14 +390,11 @@ export default function Expenses() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center mr-3">
-                          <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
+                        <div className="rounded-lg text-red-700 font-extrabold flex items-center justify-center mr-1">
+                          <MinusIcon size={15} />
                         </div>
                         <div>
                           <div className="text-gray-900 font-bold">{expense.amount.toLocaleString()}₦</div>
-                          <div className="text-xs text-gray-500">Deducted</div>
                         </div>
                       </div>
                     </td>
@@ -440,7 +440,7 @@ export default function Expenses() {
               Showing {filteredExpenses.length} of {expenses.length} expense records
               {timeFilter !== 'all' && ` • Filtered by ${timeFilter}`}
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="text-sm text-gray-600">
                 Filtered Total: <span className="font-bold text-red-600">{totalExpenses.toLocaleString()}₦</span>
@@ -455,35 +455,33 @@ export default function Expenses() {
         <h3 className="text-lg font-bold text-gray-900 mb-6">Expense Breakdown by Category</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {Array.from(new Set(expenses.map(e => e.category))).map(category => {
-            const categoryTotal = expenses
+            const categoryTotal = filteredExpenses
               .filter(e => e.category === category)
               .reduce((acc, e) => acc + e.amount, 0);
             const percentage = (categoryTotal / totalExpenses * 100).toFixed(1);
-            
+
             return (
               <div key={category} className="p-4 border border-gray-200 rounded-xl hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-2">
-                  <span className={`px-2 py-1 text-xs font-medium rounded ${
-                    category === 'Utilities' ? 'bg-blue-100 text-blue-800' :
-                    category === 'Salaries' ? 'bg-purple-100 text-purple-800' :
-                    category === 'Marketing' ? 'bg-pink-100 text-pink-800' :
-                    category === 'Office Supplies' ? 'bg-green-100 text-green-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`px-2 py-1 text-xs font-medium rounded ${category === 'Utilities' ? 'bg-blue-100 text-blue-800' :
+                      category === 'Salaries' ? 'bg-purple-100 text-purple-800' :
+                        category === 'Marketing' ? 'bg-pink-100 text-pink-800' :
+                          category === 'Office Supplies' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                    }`}>
                     {category}
                   </span>
                   <span className="text-sm font-bold text-gray-900">{percentage}%</span>
                 </div>
                 <div className="text-2xl font-bold text-gray-900">{categoryTotal.toLocaleString()}₦</div>
                 <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${
-                      category === 'Utilities' ? 'bg-blue-500' :
-                      category === 'Salaries' ? 'bg-purple-500' :
-                      category === 'Marketing' ? 'bg-pink-500' :
-                      category === 'Office Supplies' ? 'bg-green-500' :
-                      'bg-gray-500'
-                    }`}
+                  <div
+                    className={`h-2 rounded-full ${category === 'Utilities' ? 'bg-blue-500' :
+                        category === 'Salaries' ? 'bg-purple-500' :
+                          category === 'Marketing' ? 'bg-pink-500' :
+                            category === 'Office Supplies' ? 'bg-green-500' :
+                              'bg-gray-500'
+                      }`}
                     style={{ width: `${percentage}%` }}
                   ></div>
                 </div>

@@ -14,6 +14,8 @@ export default function Dashboard() {
 	const [monthlySales, setMonthlySales] = React.useState(0);
 	const [monthlyExpenses, setMonthlyExpenses] = React.useState(0);
 	const [monthlyProfit, setMonthlyProfit] = React.useState(0);
+	// Add this with your other state variables
+const [selectedDate, setSelectedDate] = useState('');
 
 	// Helper function to get date ranges
 	const getDateRange = (period) => {
@@ -22,42 +24,42 @@ export default function Dashboard() {
 		const currentMonth = today.getMonth();
 		const currentDate = today.getDate();
 		const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
-		
-		switch(period) {
+
+		switch (period) {
 			case 'today':
 				const todayStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(currentDate).padStart(2, '0')}`;
 				return { start: todayStr, end: todayStr };
-			
+
 			case 'week':
 				// Get start of week (Monday)
 				const startOfWeek = new Date(today);
 				const day = startOfWeek.getDay();
 				const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
 				startOfWeek.setDate(diff);
-				
+
 				const endOfWeek = new Date(startOfWeek);
 				endOfWeek.setDate(startOfWeek.getDate() + 6);
-				
+
 				return {
 					start: `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`,
 					end: `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`
 				};
-			
+
 			case 'month':
 				const firstDay = new Date(currentYear, currentMonth, 1);
 				const lastDay = new Date(currentYear, currentMonth + 1, 0);
-				
+
 				return {
 					start: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`,
 					end: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`
 				};
-			
+
 			case 'year':
 				return {
 					start: `${currentYear}-01-01`,
 					end: `${currentYear}-12-31`
 				};
-			
+
 			default:
 				return { start: '2025-01-01', end: '2025-12-31' };
 		}
@@ -74,22 +76,22 @@ export default function Dashboard() {
 	// Calculate filtered data
 	const calculateFilteredData = () => {
 		const range = getDateRange(timeFilter);
-		
+
 		// Filter sales and expenses by time period
 		const filteredSales = sales.filter(sale => isDateInRange(sale.date, range));
 		const filteredExpenses = expense.filter(exp => isDateInRange(exp.date, range));
-		
+
 		// Calculate totals
 		const salesTotal = filteredSales.reduce((acc, sale) => acc + sale.total, 0);
 		const expensesTotal = filteredExpenses.reduce((acc, exp) => acc + exp.amount, 0);
-		
+
 		setTotalSales(salesTotal);
 		setTotalExpenses(expensesTotal);
-		
+
 		// Calculate profit for the filtered period
 		const profit = salesTotal - expensesTotal;
 		if (timeFilter === 'today') setTodaysProfit(profit);
-		
+
 		return { salesTotal, expensesTotal, profit };
 	};
 
@@ -98,12 +100,12 @@ export default function Dashboard() {
 		const today = new Date();
 		const weekAgo = new Date(today);
 		weekAgo.setDate(today.getDate() - 7);
-		
+
 		const weekRange = {
 			start: `${weekAgo.getFullYear()}-${String(weekAgo.getMonth() + 1).padStart(2, '0')}-${String(weekAgo.getDate()).padStart(2, '0')}`,
 			end: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 		};
-		
+
 		const weeklySalesData = sales.filter(sale => isDateInRange(sale.date, weekRange));
 		const weeklyTotal = weeklySalesData.reduce((acc, sale) => acc + sale.total, 0);
 		setWeeklySales(weeklyTotal);
@@ -114,18 +116,18 @@ export default function Dashboard() {
 		const today = new Date();
 		const currentYear = today.getFullYear();
 		const currentMonth = today.getMonth();
-		
+
 		const monthRange = {
 			start: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`,
 			end: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(new Date(currentYear, currentMonth + 1, 0).getDate()).padStart(2, '0')}`
 		};
-		
+
 		const monthlySalesData = sales.filter(sale => isDateInRange(sale.date, monthRange));
 		const monthlyExpensesData = expense.filter(exp => isDateInRange(exp.date, monthRange));
-		
+
 		const monthlySalesTotal = monthlySalesData.reduce((acc, sale) => acc + sale.total, 0);
 		const monthlyExpensesTotal = monthlyExpensesData.reduce((acc, exp) => acc + exp.amount, 0);
-		
+
 		setMonthlySales(monthlySalesTotal);
 		setMonthlyExpenses(monthlyExpensesTotal);
 		setMonthlyProfit(monthlySalesTotal - monthlyExpensesTotal);
@@ -145,7 +147,7 @@ export default function Dashboard() {
 
 	// Get label for time filter
 	const getTimeFilterLabel = () => {
-		switch(timeFilter) {
+		switch (timeFilter) {
 			case 'today': return 'Today';
 			case 'week': return 'This Week';
 			case 'month': return 'This Month';
@@ -158,11 +160,11 @@ export default function Dashboard() {
 	const getDateRangeDisplay = () => {
 		const range = getDateRange(timeFilter);
 		if (timeFilter === 'today') {
-			return new Date(range.start).toLocaleDateString('en-US', { 
-				weekday: 'long', 
-				year: 'numeric', 
-				month: 'long', 
-				day: 'numeric' 
+			return new Date(range.start).toLocaleDateString('en-US', {
+				weekday: 'long',
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric'
 			});
 		}
 		return `${new Date(range.start).toLocaleDateString()} - ${new Date(range.end).toLocaleDateString()}`;
@@ -170,32 +172,31 @@ export default function Dashboard() {
 
 	return (
 		<div className="p-6 md:rounded-2xl bg-linear-to-br from-gray-50 to-gray-100 min-h-screen space-y-8">
-			
+
 			{/* Header with Time Filter */}
 			<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 				<div>
 					<h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
 					<div className="text-sm text-gray-500 mt-1">{getDateRangeDisplay()}</div>
 				</div>
-				
+
 				{/* Time Period Filter */}
 				<div className="flex flex-wrap gap-2">
 					{['today', 'week', 'month', 'year'].map((period) => (
 						<button
 							key={period}
 							onClick={() => setTimeFilter(period)}
-							className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-								timeFilter === period 
-									? period === 'today' ? 'bg-blue-600 text-white' :
-									  period === 'week' ? 'bg-purple-600 text-white' :
-									  period === 'month' ? 'bg-green-600 text-white' :
-									  'bg-amber-600 text-white'
-									: 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
-							}`}
+							className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${timeFilter === period
+								? period === 'today' ? 'bg-blue-600 text-white' :
+									period === 'week' ? 'bg-purple-600 text-white' :
+										period === 'month' ? 'bg-green-600 text-white' :
+											'bg-amber-600 text-white'
+								: 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
+								}`}
 						>
 							{period === 'today' ? 'Today' :
-							 period === 'week' ? 'This Week' :
-							 period === 'month' ? 'This Month' : 'This Year'}
+								period === 'week' ? 'This Week' :
+									period === 'month' ? 'This Month' : 'This Year'}
 						</button>
 					))}
 				</div>
@@ -205,16 +206,13 @@ export default function Dashboard() {
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 				<div className="bg-linear-to-br from-blue-50 to-white p-6 rounded-2xl shadow-lg border border-blue-100 hover:shadow-xl transition-shadow duration-300">
 					<div className="flex items-center justify-between">
-						<div>
-							<div className="flex items-center gap-2 mb-1">
-								<p className="text-sm font-medium text-blue-600">Total Sales</p>
-								<span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
-									{getTimeFilterLabel()}
-								</span>
-							</div>
+						<div className="">
+							<p className="text-sm font-medium text-blue-600">Sales</p>
 							<h2 className="text-3xl font-bold text-gray-800">{totalSales.toLocaleString()}₦</h2>
-							<p className="text-xs text-gray-500 mt-2">{getDateRangeDisplay()}</p>
+							<p className="text-xs text-gray-500 mt-2">Total Sale's {getTimeFilterLabel()}</p>
+
 						</div>
+
 						<div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
 							<svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -225,17 +223,15 @@ export default function Dashboard() {
 
 				<div className="bg-linear-to-br from-red-50 to-white p-6 rounded-2xl shadow-lg border border-red-100 hover:shadow-xl transition-shadow duration-300">
 					<div className="flex items-center justify-between">
-						<div>
-							<div className="flex items-center gap-2 mb-1">
-								<p className="text-sm font-medium text-red-600">Total Expenses</p>
-								<span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full">
-									{getTimeFilterLabel()}
-								</span>
-							</div>
+						<div className="">
+							<p className="text-sm font-medium text-red-600">Expenses</p>
 							<h2 className="text-3xl font-bold text-gray-800">{totalExpenses.toLocaleString()}₦</h2>
-							<p className="text-xs text-gray-500 mt-2">{getDateRangeDisplay()}</p>
+							<p className="text-xs text-gray-500 mt-2">Total Expense {getTimeFilterLabel()}</p>
+
+
 						</div>
 						<div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+
 							<svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
 							</svg>
@@ -288,16 +284,15 @@ export default function Dashboard() {
 								<button
 									key={period}
 									onClick={() => setTimeFilter(period)}
-									className={`px-3 py-1 text-sm rounded-lg transition-colors ${
-										timeFilter === period
-											? period === 'week' ? 'bg-purple-50 text-purple-600' :
-											  period === 'month' ? 'bg-green-50 text-green-600' :
-											  'bg-amber-50 text-amber-600'
-											: 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-									}`}
+									className={`px-3 py-1 text-sm rounded-lg transition-colors ${timeFilter === period
+										? period === 'week' ? 'bg-purple-50 text-purple-600' :
+											period === 'month' ? 'bg-green-50 text-green-600' :
+												'bg-amber-50 text-amber-600'
+										: 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+										}`}
 								>
 									{period === 'week' ? 'Week' :
-									 period === 'month' ? 'Month' : 'Year'}
+										period === 'month' ? 'Month' : 'Year'}
 								</button>
 							))}
 						</div>
@@ -330,19 +325,17 @@ export default function Dashboard() {
 						<div className="pb-4 border-b border-gray-100">
 							<p className="flex justify-between items-center mb-2">
 								<span className="text-gray-600">Profit ({getTimeFilterLabel()})</span>
-								<span className={`text-sm px-2 py-1 rounded-full ${
-									(totalSales - totalExpenses) >= 0 
-										? 'bg-green-50 text-green-600' 
-										: 'bg-red-50 text-red-600'
-								}`}>
+								<span className={`text-sm px-2 py-1 rounded-full ${(totalSales - totalExpenses) >= 0
+									? 'bg-green-50 text-green-600'
+									: 'bg-red-50 text-red-600'
+									}`}>
 									{totalSales >= totalExpenses ? 'Profit' : 'Loss'}
 								</span>
 							</p>
-							<h4 className={`text-2xl font-bold ${
-								(totalSales - totalExpenses) >= 0 
-									? 'text-green-600' 
-									: 'text-red-600'
-							}`}>
+							<h4 className={`text-2xl font-bold ${(totalSales - totalExpenses) >= 0
+								? 'text-green-600'
+								: 'text-red-600'
+								}`}>
 								₦{Math.abs(totalSales - totalExpenses).toLocaleString()}
 							</h4>
 						</div>
@@ -371,9 +364,8 @@ export default function Dashboard() {
 								</div>
 								<div className="flex justify-between border-t pt-2">
 									<span className="text-gray-700 font-medium">Net:</span>
-									<span className={`font-bold ${
-										monthlyProfit >= 0 ? 'text-green-600' : 'text-red-600'
-									}`}>
+									<span className={`font-bold ${monthlyProfit >= 0 ? 'text-green-600' : 'text-red-600'
+										}`}>
 										{monthlyProfit >= 0 ? '+' : ''}{monthlyProfit.toLocaleString()}₦
 									</span>
 								</div>
@@ -402,9 +394,7 @@ export default function Dashboard() {
 						<h3 className="text-lg font-semibold text-gray-800">Recent Activity</h3>
 						<p className="text-sm text-gray-500">Latest transactions for {getTimeFilterLabel().toLowerCase()}</p>
 					</div>
-					<button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-						View All Activity
-					</button>
+					
 				</div>
 
 				{/* Display recent sales and expenses */}
@@ -435,7 +425,7 @@ export default function Dashboard() {
 								</div>
 							</div>
 						))}
-					
+
 					{expense
 						.filter(exp => {
 							const range = getDateRange(timeFilter);
@@ -462,26 +452,26 @@ export default function Dashboard() {
 								</div>
 							</div>
 						))}
-					
+
 					{/* Show message if no activity */}
 					{sales.filter(sale => {
 						const range = getDateRange(timeFilter);
 						return isDateInRange(sale.date, range);
-					}).length === 0 && 
-					 expense.filter(exp => {
-						const range = getDateRange(timeFilter);
-						return isDateInRange(exp.date, range);
-					}).length === 0 && (
-						<div className="rounded-xl border border-gray-100 bg-gray-50 p-8 text-center">
-							<div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-4">
-								<svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-								</svg>
+					}).length === 0 &&
+						expense.filter(exp => {
+							const range = getDateRange(timeFilter);
+							return isDateInRange(exp.date, range);
+						}).length === 0 && (
+							<div className="rounded-xl border border-gray-100 bg-gray-50 p-8 text-center">
+								<div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-4">
+									<svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+									</svg>
+								</div>
+								<h4 className="text-gray-600 font-medium mb-2">No Activity for {getTimeFilterLabel()}</h4>
+								<p className="text-gray-400 text-sm">No transactions found for the selected time period</p>
 							</div>
-							<h4 className="text-gray-600 font-medium mb-2">No Activity for {getTimeFilterLabel()}</h4>
-							<p className="text-gray-400 text-sm">No transactions found for the selected time period</p>
-						</div>
-					)}
+						)}
 				</div>
 			</div>
 		</div>

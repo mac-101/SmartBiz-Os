@@ -8,3 +8,15 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+/* Remove ALL outlines */
+*:focus {
+  outline: none !important;
+}
+
+/* Specifically for Recharts */
+.recharts-wrapper,
+.recharts-surface,
+.recharts-legend-wrapper,
+.recharts-default-legend {
+  outline: none !important;
+}

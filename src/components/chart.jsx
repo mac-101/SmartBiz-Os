@@ -143,6 +143,7 @@ const FinancialChart = ({ timeFilter = 'week' }) => {
     <div className="w-full h-full">
       <ResponsiveContainer width="100%" height={400}>
         <AreaChart
+         className="outline-none focus:outline-none"
           data={chartData}
           margin={{ top: 10, right: 30, left: 0, bottom: 0, }}
         >
@@ -195,12 +196,7 @@ const FinancialChart = ({ timeFilter = 'week' }) => {
         </AreaChart>
       </ResponsiveContainer>
       
-      <div className="mt-4 text-sm text-gray-500 text-center">
-        Showing data for: {timeFilter === 'today' ? 'Today' : 
-                          timeFilter === 'week' ? 'This Week' : 
-                          timeFilter === 'month' ? 'This Month' : 
-                          timeFilter === 'year' ? 'This Year' : 'All Time'}
-      </div>
+      
     </div>
   );
 };

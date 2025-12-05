@@ -333,7 +333,7 @@ export default function Dashboard() {
 						</div>
 
 						{/* Chart with proper height */}
-						<div className="h-[400px] rounded-lg border border-gray-100 bg-linear-to-br from-gray-50 to-white p-4">
+						<div className="h-fit rounded-lg border border-gray-100 bg-linear-to-br from-gray-50 to-white pt-6 pb-1">
 							<FinancialChart timeFilter={timeFilter} />
 						</div>
 

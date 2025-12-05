@@ -17,7 +17,7 @@ export default function Dashboard() {
 	const [monthlyExpenses, setMonthlyExpenses] = React.useState(0);
 	const [monthlyProfit, setMonthlyProfit] = React.useState(0);
 	// Add this with your other state variables
-const [selectedDate, setSelectedDate] = useState('');
+	const [selectedDate, setSelectedDate] = useState('');
 
 	// Helper function to get date ranges
 	const getDateRange = (period) => {
@@ -177,7 +177,7 @@ const [selectedDate, setSelectedDate] = useState('');
 
 			{/* Header with Time Filter */}
 
-			<FloatingBtn/>
+			<FloatingBtn />
 			<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 				<div>
 					<h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
@@ -277,66 +277,65 @@ const [selectedDate, setSelectedDate] = useState('');
 			{/* Middle Section */}
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 				{/* Chart Placeholder with Time Filter */}
-				<div className="lg:col-span-2 bg-white rounded-2xl shadow-lg border p-6">
-  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-    <div>
-      <h3 className="text-lg font-semibold text-gray-800">Financial Overview</h3>
-      <p className="text-sm text-gray-500">
-        Sales vs Expenses vs Profit for {getTimeFilterLabel().toLowerCase()}
-      </p>
-    </div>
-    <div className="flex flex-wrap gap-2">
-      {['today', 'week', 'month', 'year', 'all'].map((period) => (
-        <button
-          key={period}
-          onClick={() => setTimeFilter(period)}
-          className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-            timeFilter === period
-              ? period === 'today' 
-                ? 'bg-blue-100 text-blue-700 border border-blue-200' 
-                : period === 'week'
-                ? 'bg-purple-100 text-purple-700 border border-purple-200'
-                : period === 'month'
-                ? 'bg-green-100 text-green-700 border border-green-200'
-                : period === 'year'
-                ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                : 'bg-gray-100 text-gray-700 border border-gray-200'
-              : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
-          }`}
-        >
-          {period === 'today' ? 'Today' :
-           period === 'week' ? 'This Week' :
-           period === 'month' ? 'This Month' :
-           period === 'year' ? 'This Year' :
-           'All Time'}
-        </button>
-      ))}
-    </div>
-  </div>
-  
-  {/* Chart Container */}
-  <div className="relative">
-    <div className="absolute top-3 right-3 z-10">
-      <div className="flex items-center gap-3 text-xs text-gray-600">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
-          <span>Sales</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm bg-red-500"></div>
-          <span>Expenses</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm bg-green-500"></div>
-          <span>Profit</span>
-        </div>
-      </div>
-    </div>
-    
-    {/* Chart with proper height */}
-    <div className="h-[400px] rounded-lg border border-gray-100 bg-linear-to-br from-gray-50 to-white p-4">
-      <FinancialChart timeFilter={timeFilter} />
-    </div>
+				<div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
+					<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+						<div>
+							<h3 className="text-lg font-semibold text-gray-800">Financial Overview</h3>
+							<p className="text-sm text-gray-500">
+								Sales vs Expenses vs Profit for {getTimeFilterLabel().toLowerCase()}
+							</p>
+						</div>
+						<div className="flex flex-wrap gap-2">
+							{['today', 'week', 'month', 'year', 'all'].map((period) => (
+								<button
+									key={period}
+									onClick={() => setTimeFilter(period)}
+									className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${timeFilter === period
+											? period === 'today'
+												? 'bg-blue-100 text-blue-700 border border-blue-200'
+												: period === 'week'
+													? 'bg-purple-100 text-purple-700 border border-purple-200'
+													: period === 'month'
+														? 'bg-green-100 text-green-700 border border-green-200'
+														: period === 'year'
+															? 'bg-amber-100 text-amber-700 border border-amber-200'
+															: 'bg-gray-100 text-gray-700 border border-gray-200'
+											: 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+										}`}
+								>
+									{period === 'today' ? 'Today' :
+										period === 'week' ? 'This Week' :
+											period === 'month' ? 'This Month' :
+												period === 'year' ? 'This Year' :
+													'All Time'}
+								</button>
+							))}
+						</div>
+					</div>
+
+					{/* Chart Container */}
+					<div className="relative">
+						<div className="absolute top-3 right-3 z-10">
+							<div className="flex items-center gap-3 text-xs text-gray-600">
+								<div className="flex items-center gap-1.5">
+									<div className="w-3 h-3 rounded-sm bg-blue-500"></div>
+									<span>Sales</span>
+								</div>
+								<div className="flex items-center gap-1.5">
+									<div className="w-3 h-3 rounded-sm bg-red-500"></div>
+									<span>Expenses</span>
+								</div>
+								<div className="flex items-center gap-1.5">
+									<div className="w-3 h-3 rounded-sm bg-green-500"></div>
+									<span>Profit</span>
+								</div>
+							</div>
+						</div>
+
+						{/* Chart with proper height */}
+						<div className="h-[400px] rounded-lg border border-gray-100 bg-linear-to-br from-gray-50 to-white p-4">
+							<FinancialChart timeFilter={timeFilter} />
+						</div>
 
 
 
@@ -347,73 +346,73 @@ const [selectedDate, setSelectedDate] = useState('');
 
 
 
-    
-    {/* Chart Summary */}
-    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-blue-700">Total Sales</p>
-            <p className="text-2xl font-bold text-gray-900">
-              ₦{sales.filter(s => {
-                const range = getDateRange(timeFilter);
-                return !range || isDateInRange(s.date, range);
-              }).reduce((acc, s) => acc + s.total, 0).toLocaleString()}
-            </p>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 11l7-7 7 7M5 19l7-7 7 7" />
-            </svg>
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-red-50 p-3 rounded-lg border border-red-100">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-red-700">Total Expenses</p>
-            <p className="text-2xl font-bold text-gray-900">
-              ₦{expense.filter(e => {
-                const range = getDateRange(timeFilter);
-                return !range || isDateInRange(e.date, range);
-              }).reduce((acc, e) => acc + e.amount, 0).toLocaleString()}
-            </p>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-green-50 p-3 rounded-lg border border-green-100">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-green-700">Net Profit</p>
-            <p className="text-2xl font-bold text-gray-900">
-              ₦{(sales.filter(s => {
-                  const range = getDateRange(timeFilter);
-                  return !range || isDateInRange(s.date, range);
-                }).reduce((acc, s) => acc + s.total, 0) - 
-                expense.filter(e => {
-                  const range = getDateRange(timeFilter);
-                  return !range || isDateInRange(e.date, range);
-                }).reduce((acc, e) => acc + e.amount, 0)
-              ).toLocaleString()}
-            </p>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+
+						{/* Chart Summary */}
+						<div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+							<div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+								<div className="flex items-center justify-between">
+									<div>
+										<p className="text-sm font-medium text-blue-700">Total Sales</p>
+										<p className="text-2xl font-bold text-gray-900">
+											₦{sales.filter(s => {
+												const range = getDateRange(timeFilter);
+												return !range || isDateInRange(s.date, range);
+											}).reduce((acc, s) => acc + s.total, 0).toLocaleString()}
+										</p>
+									</div>
+									<div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+										<svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 11l7-7 7 7M5 19l7-7 7 7" />
+										</svg>
+									</div>
+								</div>
+							</div>
+
+							<div className="bg-red-50 p-3 rounded-lg border border-red-100">
+								<div className="flex items-center justify-between">
+									<div>
+										<p className="text-sm font-medium text-red-700">Total Expenses</p>
+										<p className="text-2xl font-bold text-gray-900">
+											₦{expense.filter(e => {
+												const range = getDateRange(timeFilter);
+												return !range || isDateInRange(e.date, range);
+											}).reduce((acc, e) => acc + e.amount, 0).toLocaleString()}
+										</p>
+									</div>
+									<div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+										<svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+										</svg>
+									</div>
+								</div>
+							</div>
+
+							<div className="bg-green-50 p-3 rounded-lg border border-green-100">
+								<div className="flex items-center justify-between">
+									<div>
+										<p className="text-sm font-medium text-green-700">Net Profit</p>
+										<p className="text-2xl font-bold text-gray-900">
+											₦{(sales.filter(s => {
+												const range = getDateRange(timeFilter);
+												return !range || isDateInRange(s.date, range);
+											}).reduce((acc, s) => acc + s.total, 0) -
+												expense.filter(e => {
+													const range = getDateRange(timeFilter);
+													return !range || isDateInRange(e.date, range);
+												}).reduce((acc, e) => acc + e.amount, 0)
+											).toLocaleString()}
+										</p>
+									</div>
+									<div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+										<svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+										</svg>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 
 
 
@@ -422,7 +421,7 @@ const [selectedDate, setSelectedDate] = useState('');
 
 
 				{/* Quick Summary */}
-				<div className="bg-white rounded-2xl shadow-lg border p-6">
+				<div className="bg-white rounded-2xl shadow-lg p-6">
 					<h3 className="text-lg font-semibold text-gray-800 mb-6">Quick Summary</h3>
 
 					<div className="space-y-6">
@@ -492,13 +491,13 @@ const [selectedDate, setSelectedDate] = useState('');
 			</div>
 
 			{/* Recent Activity */}
-			<div className="bg-white rounded-2xl shadow-lg border p-6">
+			<div className="bg-white rounded-2xl shadow-lg p-6">
 				<div className="flex justify-between items-center mb-6">
 					<div>
 						<h3 className="text-lg font-semibold text-gray-800">Recent Activity</h3>
 						<p className="text-sm text-gray-500">Latest transactions for {getTimeFilterLabel().toLowerCase()}</p>
 					</div>
-					
+
 				</div>
 
 				{/* Display recent sales and expenses */}

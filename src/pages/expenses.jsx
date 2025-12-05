@@ -109,7 +109,7 @@ export default function Expenses() {
   const categories = ['all', ...new Set(expenses.map(e => e.category))];
 
   return (
-    <div className="p-4 md:p-8 min-h-screen bg-linear-to-br from-gray-50 to-gray-100 space-y-8">
+    <div className="p-4 md:p-8 min-h-screen bg-linear-to-br rounded-2xl from-gray-50 to-gray-100 space-y-8">
 
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -148,6 +148,7 @@ export default function Expenses() {
           </div>
 
           {/* Highest Expense Card */}
+
           <div className="bg-linear-to-r from-orange-500 to-orange-600 text-white p-5 rounded-2xl shadow-lg">
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-3 mb-3">
@@ -344,9 +345,7 @@ export default function Expenses() {
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Description
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Vendor
-                </th>
+                
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   <button
                     onClick={() => setSortOrder(sortOrder === 'highest' ? 'lowest' : 'highest')}
@@ -372,10 +371,10 @@ export default function Expenses() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${expense.category === 'Utilities' ? 'bg-blue-50 text-blue-700' :
-                          expense.category === 'Salaries' ? 'bg-purple-50 text-purple-700' :
-                            expense.category === 'Marketing' ? 'bg-pink-50 text-pink-700' :
-                              expense.category === 'Office Supplies' ? 'bg-green-50 text-green-700' :
-                                'bg-gray-50 text-gray-700'
+                        expense.category === 'Salaries' ? 'bg-purple-50 text-purple-700' :
+                          expense.category === 'Marketing' ? 'bg-pink-50 text-pink-700' :
+                            expense.category === 'Office Supplies' ? 'bg-green-50 text-green-700' :
+                              'bg-gray-50 text-gray-700'
                         }`}>
                         {expense.category}
                       </span>
@@ -385,9 +384,7 @@ export default function Expenses() {
                         <div className="text-gray-900 font-medium truncate">{expense.description}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-gray-900">{expense.vendor}</div>
-                    </td>
+                    
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="rounded-lg text-red-700 font-extrabold flex items-center justify-center mr-1">
@@ -464,10 +461,10 @@ export default function Expenses() {
               <div key={category} className="p-4 border border-gray-200 rounded-xl hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-2">
                   <span className={`px-2 py-1 text-xs font-medium rounded ${category === 'Utilities' ? 'bg-blue-100 text-blue-800' :
-                      category === 'Salaries' ? 'bg-purple-100 text-purple-800' :
-                        category === 'Marketing' ? 'bg-pink-100 text-pink-800' :
-                          category === 'Office Supplies' ? 'bg-green-100 text-green-800' :
-                            'bg-gray-100 text-gray-800'
+                    category === 'Salaries' ? 'bg-purple-100 text-purple-800' :
+                      category === 'Marketing' ? 'bg-pink-100 text-pink-800' :
+                        category === 'Office Supplies' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
                     }`}>
                     {category}
                   </span>
@@ -477,10 +474,10 @@ export default function Expenses() {
                 <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full ${category === 'Utilities' ? 'bg-blue-500' :
-                        category === 'Salaries' ? 'bg-purple-500' :
-                          category === 'Marketing' ? 'bg-pink-500' :
-                            category === 'Office Supplies' ? 'bg-green-500' :
-                              'bg-gray-500'
+                      category === 'Salaries' ? 'bg-purple-500' :
+                        category === 'Marketing' ? 'bg-pink-500' :
+                          category === 'Office Supplies' ? 'bg-green-500' :
+                            'bg-gray-500'
                       }`}
                     style={{ width: `${percentage}%` }}
                   ></div>

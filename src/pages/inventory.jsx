@@ -46,7 +46,7 @@ export default function Inventory() {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-6 min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
+    <div className="p-4 md:p-6 rounded-2xl space-y-6 min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
 
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">

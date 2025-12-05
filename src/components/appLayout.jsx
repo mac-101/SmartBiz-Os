@@ -47,7 +47,7 @@ export function AppLayout({ children }) {
 
                
 
-                <div className="grid grid-cols-1 justify-items-center w-full">
+                <div className="grid grid-cols-1  justify-items-center w-full">
                     <div className="w-full md:p-6">
                         {children}
                     </div>

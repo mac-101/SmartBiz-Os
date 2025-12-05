@@ -604,7 +604,7 @@ export default function Sales() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="rounded-lg text-green-800 font-extrabold flex items-center justify-center mr-2">
+                        <div className="rounded-lg text-green-800 font-extrabold flex items-center justify-center mr-1">
                           <Plus size={15} />
                         </div>
                         <div>

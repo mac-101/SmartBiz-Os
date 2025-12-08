@@ -1,6 +1,5 @@
 import { expense, sales, inventory } from "../components/data";
 import React, { useEffect, useState } from "react";
-import FloatingBtn from "../components/floatingBtn";
 import FinancialChart from "../components/chart";
 
 export default function Dashboard() {
@@ -173,11 +172,10 @@ export default function Dashboard() {
 	};
 
 	return (
-		<div className="p-6 md:rounded-2xl bg-linear-to-br from-gray-50 to-gray-100 min-h-screen space-y-8">
+		<div className="p-2 md:p-6 md:rounded-2xl bg-linear-to-br from-gray-50 to-gray-100 min-h-screen space-y-8">
 
 			{/* Header with Time Filter */}
 
-			<FloatingBtn />
 			<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 				<div>
 					<h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>

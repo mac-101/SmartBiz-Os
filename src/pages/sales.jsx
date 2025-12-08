@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from "react";
-import FloatingBtn from "../components/floatingBtn.jsx";
 import { Plus } from "lucide-react";
 import { sales as salesData } from "../components/data.jsx";
 
@@ -372,7 +371,6 @@ export default function Sales() {
         </div>
       </div>
 
-      <FloatingBtn action="sale" />
 
       {/* Sales Table Section */}
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">

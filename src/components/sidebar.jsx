@@ -13,7 +13,7 @@ import {
     Shield
 } from "lucide-react";
 
-export default function Sidebar({ active }) {
+export default function Sidebar({ active, onclick }) {
     const menuItems = [
         { path: "/", label: "Dashboard", icon: LayoutDashboard, color: "text-blue-600", bg: "bg-blue-50" },
         { path: "/sales", label: "Sales", icon: ShoppingCart, color: "text-green-600", bg: "bg-green-50" },
@@ -54,6 +54,7 @@ export default function Sidebar({ active }) {
                                         ? `${item.bg} ${item.color} font-semibold shadow-sm`
                                         : "text-gray-700 hover:bg-gray-100"
                                     }`}
+                                onClick={onclick}
                             >
                                 <div className="flex items-center gap-3">
                                     <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${active === item.path ? item.bg : "bg-gray-100 group-hover:bg-gray-200"}`}>
@@ -81,6 +82,8 @@ export default function Sidebar({ active }) {
                                         ? `${item.bg} ${item.color} font-semibold shadow-sm`
                                         : "text-gray-700 hover:bg-gray-100"
                                     }`}
+                                onClick={onclick}
+
                             >
                                 <div className="flex items-center gap-3">
                                     <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${active === item.path ? item.bg : "bg-gray-100 group-hover:bg-gray-200"}`}>
@@ -108,6 +111,8 @@ export default function Sidebar({ active }) {
                                         ? `${item.bg} ${item.color} font-semibold shadow-sm`
                                         : "text-gray-700 hover:bg-gray-100"
                                     }`}
+                                onClick={onclick}
+
                             >
                                 <div className="flex items-center gap-3">
                                     <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${active === item.path ? item.bg : "bg-gray-100 group-hover:bg-gray-200"}`}>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import FloatingBtn from "../components/floatingBtn.jsx";
 import { inventory } from "../components/data.jsx";
 
 export default function Inventory() {
@@ -55,7 +54,6 @@ export default function Inventory() {
           <p className="text-gray-600 mt-2">Track and manage all products in stock</p>
         </div>
 
-        <FloatingBtn action="inventory" />
       </div>
 
       {/* Stats Cards */}

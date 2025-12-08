@@ -1,13 +1,23 @@
 import { Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 
-export default function FloatingBtn({ action, openSaleForm, openExpenseForm, openProductForm }) {
+export default function FloatingBtn({ formOpeners }) {
   const [showOptions, setShowOptions] = useState(false);
 
-  const handleMainClick = () => {
-    if (action === "sale") openSaleForm();
-    else if (action === "expense") openExpenseForm();
-    else if (action === "inventory") openProductForm();
+  const handleMainClick = (action) => {
+    switch (action) {
+      case "sale":
+        formOpeners.openSaleForm();
+        break;
+      case "expense":
+        formOpeners.openExpenseForm();
+        break;
+      case "inventory":
+        formOpeners.openInventoryForm();
+        break;
+      default:
+        console.log("Unknown action:", action);
+    }
   };
 
   const handleOptions = () => {
@@ -29,7 +39,7 @@ export default function FloatingBtn({ action, openSaleForm, openExpenseForm, ope
             <button
               onClick={() => {
                 handleOptions();
-                openSaleForm();
+                handleMainClick("sale");
               }}
               className="flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg px-4 py-3 transition-all hover:scale-[1.02]"
             >
@@ -43,7 +53,7 @@ export default function FloatingBtn({ action, openSaleForm, openExpenseForm, ope
             <button
               onClick={() => {
                 handleOptions();
-                openExpenseForm();
+                handleMainClick("expense");
               }}
               className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg px-4 py-3 transition-all hover:scale-[1.02]"
             >
@@ -57,7 +67,7 @@ export default function FloatingBtn({ action, openSaleForm, openExpenseForm, ope
             <button
               onClick={() => {
                 handleOptions();
-                openProductForm();
+                handleMainClick("inventory");
               }}
               className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg px-4 py-3 transition-all hover:scale-[1.02]"
             >
@@ -80,7 +90,7 @@ export default function FloatingBtn({ action, openSaleForm, openExpenseForm, ope
                 handleOptions();
               }}
               className="
-                bg-linear-to-r from-purple-500 to-purple-600 text-white
+                bg-gradient-to-r from-purple-500 to-purple-600 text-white
                 rounded-full
                 w-12 h-12
                 flex items-center justify-center
@@ -102,7 +112,7 @@ export default function FloatingBtn({ action, openSaleForm, openExpenseForm, ope
           <button
             onClick={handleOptions}
             className={`
-              bg-linear-to-r from-blue-500 to-blue-600 text-white
+              bg-gradient-to-r from-blue-500 to-blue-600 text-white
               rounded-full
               w-14 h-14
               flex items-center justify-center

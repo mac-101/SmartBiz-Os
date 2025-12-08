@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import FloatingBtn from "../components/floatingBtn";
 import { expense } from "../components/data";
 import { MinusIcon } from "lucide-react";
 
@@ -109,7 +108,7 @@ export default function Expenses() {
   const categories = ['all', ...new Set(expenses.map(e => e.category))];
 
   return (
-    <div className="p-4 md:p-8 min-h-screen bg-linear-to-br rounded-2xl from-gray-50 to-gray-100 space-y-8">
+    <div className="p-2 md:p-6 min-h-screen bg-linear-to-br rounded-2xl from-gray-50 to-gray-100 space-y-8">
 
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -305,7 +304,6 @@ export default function Expenses() {
         </div>
       </div>
 
-      <FloatingBtn action="expense" />
 
       {/* Expense History Section */}
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">

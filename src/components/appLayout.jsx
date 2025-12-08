@@ -10,6 +10,7 @@ export function AppLayout({ children }) {
     const [isSidebarVisible, setSidebarVisible] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [formType, setFormType] = useState("sale");
+    const [click, setClick] = useState(true)
 
     const openSaleForm = () => {
         setFormType("sale");
@@ -56,8 +57,14 @@ export function AppLayout({ children }) {
 
     useEffect(() => {
         const handleResize = () => {
-            if (window.innerWidth >= 1100) setSidebarVisible(true);
-            else setSidebarVisible(false);
+            if (window.innerWidth >= 1100) {
+                setSidebarVisible(true);
+                setClick(false)
+
+            } else {
+                setSidebarVisible(false);
+                setClick(true)
+            }
         };
 
         handleResize();
@@ -88,21 +95,18 @@ export function AppLayout({ children }) {
                 <div className="fixed md:relative z-40">
                     <Sidebar
                         active={window.location.pathname}
-                        setVisibility={setSidebarVisible}
-                        isVisible={isSidebarVisible}
+                        onclick={click && toggleSidebar}
                     />
                 </div>
             )}
 
             {/* Main content area */}
-            <main className={`flex-1 min-h-screen transition-all duration-300 ${
-                isSidebarVisible ? "lg:ml-64" : ""
-            }`}>
+            <main className={`flex-1 min-h-screen transition-all duration-300 ${isSidebarVisible ? "lg:ml-64" : ""
+                }`}>
                 {/* Toggle button */}
                 <button
-                    className={`fixed top-4 left-4 z-50 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors ${
-                        isSidebarVisible ? "ml-50" : ""
-                    }`}
+                    className={`fixed top-4 left-4 z-50 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors ${isSidebarVisible ? "ml-50" : ""
+                        }`}
                     onClick={toggleSidebar}
                 >
                     <LayoutDashboard size={20} />
@@ -113,7 +117,7 @@ export function AppLayout({ children }) {
 
                 {/* Form Modal */}
                 {showForm && (
-                    <div 
+                    <div
                         className="fixed inset-0 w-full h-full backdrop-blur-md bg-black/30 flex items-center justify-center z-50 p-2 md:p-4"
                         onClick={handleBackdropClick}
                     >
@@ -125,7 +129,7 @@ export function AppLayout({ children }) {
                             >
                                 <X size={20} />
                             </button>
-                            
+
                             {/* Form Content */}
                             <div className=" p-1">
                                 {renderForm()}

@@ -8,10 +8,11 @@ import {
     LayoutDashboard,
     ChevronRight,
     BarChart3,
-    Package,
+    UserCircle,
     MessageSquare,
     Shield
 } from "lucide-react";
+import { businessInfo } from "./data";
 
 export default function Sidebar({ active, onclick }) {
     const menuItems = [
@@ -19,8 +20,9 @@ export default function Sidebar({ active, onclick }) {
         { path: "/sales", label: "Sales", icon: ShoppingCart, color: "text-green-600", bg: "bg-green-50" },
         { path: "/expenses", label: "Expenses", icon: Receipt, color: "text-red-600", bg: "bg-red-50" },
         { path: "/inventory", label: "Inventory", icon: FolderKanban, color: "text-purple-600", bg: "bg-purple-50" },
-        { path: "/profile", label: "Reports", icon: BarChart3, color: "text-amber-600", bg: "bg-amber-50" },
+        { path: "/Reports", label: "Reports", icon: BarChart3, color: "text-amber-600", bg: "bg-amber-50" },
         { path: "/assistant", label: "AI Assistant", icon: Bot, color: "text-cyan-600", bg: "bg-cyan-50" },
+        { path: "/profile", label: "Profile", icon: UserCircle, color: "text-gray-600", bg: "bg-gray-50" },
         { path: "/settings", label: "Settings", icon: Settings, color: "text-gray-600", bg: "bg-gray-50" },
     ];
 
@@ -149,17 +151,19 @@ export default function Sidebar({ active, onclick }) {
             <div className="p-4 border-t border-gray-100 bg-white">
                 <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-full bg-linear-to-r from-blue-500 to-blue-600 flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">SB</span>
+                        <span className="text-white text-sm font-bold">{businessInfo.businessName.charAt(0)}</span>
                     </div>
                     <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">SmartBiz OS</p>
-                        <p className="text-xs text-gray-500">v2.1.0 • Premium</p>
+                        <p className="text-sm font-medium text-gray-900">{businessInfo.businessName}</p>
+                        <p className="text-xs text-gray-500">{businessInfo.businessType}</p>
                     </div>
                 </div>
                 <div className="text-xs text-gray-400 text-center">
                     © {new Date().getFullYear()} SmartBiz. All rights reserved.
                 </div>
             </div>
+
+            
         </div>
     );
 }

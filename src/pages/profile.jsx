@@ -784,7 +784,6 @@ ${businessData.ownerName}
 ${businessData.email}
 ${businessData.phone}
 ${businessData.address}
-${businessData.website}
 
 ${businessData.businessType}
 Established: ${businessData.established}

@@ -796,7 +796,6 @@ ${businessData.description}`;
       navigator.share({
         title: `${businessData.businessName} - Business Card`,
         text: shareText,
-        url: window.location.href,
       }).catch(console.error);
     } else {
       navigator.clipboard.writeText(shareText)
@@ -806,7 +805,6 @@ ${businessData.description}`;
           const blob = new Blob([shareText], { type: 'text/plain' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
-          a.href = url;
           a.download = `${businessData.businessName.replace(/\s+/g, '_')}_Business_Card.txt`;
           document.body.appendChild(a);
           a.click();

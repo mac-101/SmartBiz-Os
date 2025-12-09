@@ -90,7 +90,7 @@ export default function FloatingBtn({ formOpeners }) {
                 handleOptions();
               }}
               className="
-                bg-gradient-to-r from-purple-500 to-purple-600 text-white
+                bg-linear-to-r from-purple-500 to-purple-600 text-white
                 rounded-full
                 w-12 h-12
                 flex items-center justify-center
@@ -112,7 +112,7 @@ export default function FloatingBtn({ formOpeners }) {
           <button
             onClick={handleOptions}
             className={`
-              bg-gradient-to-r from-blue-500 to-blue-600 text-white
+              bg-linear-to-r from-blue-500 to-blue-600 text-white
               rounded-full
               w-14 h-14
               flex items-center justify-center

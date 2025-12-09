@@ -59,7 +59,7 @@ function ExpenseForm() {
   };
 
   return (
-    <div className='max-w-4xl mx-auto p-4 md:p-6 lg:p-8 bg-white rounded-xl shadow-lg'>
+    <div className='max-w-4xl mx-auto p-4 md:p-6 lg:p-8 bg-white rounded-xl '>
       <h2 className='text-2xl lg:text-3xl font-bold text-gray-800 mb-6'>Record Expenses</h2>
       
       <form onSubmit={handleSubmit} className='space-y-6'>
@@ -175,7 +175,7 @@ function ExpenseForm() {
         </div>
 
         {/* Summary */}
-        <div className='p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-lg border border-red-200'>
+        <div className='p-4 bg-linear-to-r from-red-50 to-red-100 rounded-lg border border-red-200'>
           <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
             <div>
               <h3 className='font-semibold text-gray-800'>Expense Summary</h3>

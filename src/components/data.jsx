@@ -166,3 +166,37 @@ export const inventory = [
   { id: 26, product: 'Server Rack', sku: 'SR-8002', category: 'Enterprise', quantity: 5, price: 3500, reorderLevel: 1 },
   { id: 27, product: 'VR Headset', sku: 'VR-8003', category: 'Gaming', quantity: 10, price: 800, reorderLevel: 3 }
 ];
+
+
+
+export const businessInfo = {
+  businessName: "CMC Technologies",
+  ownerName: "Charles MacAnthony",
+  email: "info@cmctechnologies.com",
+  phone: "+1 (415) 555-7890",
+  address: "123 Tech Valley Drive, San Francisco, CA 94107",
+  website: "www.cmctechnologies.com",
+  businessType: "Technology Solutions & IT Services",
+  established: "March 12, 2015",
+  taxId: "TAX-2023-CMC789",
+  description: "CMC Technologies provides comprehensive IT solutions, software development, and tech consulting services for businesses of all sizes. We specialize in custom software, cloud migration, cybersecurity, and digital transformation.",
+  
+  // Additional business details
+  mission: "Empowering businesses through innovative technology solutions that drive growth and efficiency.",
+  vision: "To be the leading technology partner for small and medium enterprises in North America.",
+  coreValues: ["Innovation", "Reliability", "Customer-Centric", "Excellence", "Integrity"],
+  
+  // Contact details
+  secondaryPhone: "+1 (415) 555-7891",
+  supportEmail: "support@cmctechnologies.com",
+  socialMedia: {
+    linkedin: "linkedin.com/company/cmc-technologies",
+    twitter: "twitter.com/cmctech",
+    facebook: "facebook.com/cmctechnologies"
+  },
+  
+ 
+  // Return/Support policy
+  supportPolicy: "24/7 technical support available for enterprise clients. Standard business hours for general inquiries.",
+  
+};

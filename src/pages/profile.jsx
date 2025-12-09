@@ -125,6 +125,12 @@ Generated on ${new Date().toLocaleDateString()}
   const downloadHTMLBusinessCard = () => {
     setIsGenerating(true);
 
+    // Ensure website URL has proper protocol
+    let websiteUrl = businessData.website;
+    if (!websiteUrl.startsWith('http')) {
+        websiteUrl = 'https://' + websiteUrl;
+    }
+
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -389,6 +395,30 @@ Generated on ${new Date().toLocaleDateString()}
             }
         }
         
+        .smartbiz-link {
+            margin-top: 10px;
+            font-size: 11px;
+            color: #4f46e5;
+            text-decoration: none;
+            cursor: pointer;
+            display: inline-block;
+            padding: 3px 8px;
+            background: rgba(79, 70, 229, 0.1);
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .smartbiz-link:hover {
+            background: rgba(79, 70, 229, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        @media (min-width: 768px) {
+            .smartbiz-link {
+                font-size: 12px;
+            }
+        }
+        
         .qr-section {
             display: flex;
             align-items: center;
@@ -415,10 +445,12 @@ Generated on ${new Date().toLocaleDateString()}
             border-radius: 5px;
             font-size: 10px;
             cursor: pointer;
+            transition: background 0.2s;
         }
         
         .qr-box:hover {
             background: #444;
+            transform: scale(1.05);
         }
         
         @media (min-width: 768px) {
@@ -448,13 +480,35 @@ Generated on ${new Date().toLocaleDateString()}
             transform: translateX(-50%);
             background: #4f46e5;
             color: white;
-            padding: 10px 20px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            padding: 12px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
             z-index: 1000;
             font-size: 14px;
             text-align: center;
             max-width: 90%;
+            animation: slideIn 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        .link-notice.warning {
+            background: #f59e0b;
+        }
+        
+        .link-notice.success {
+            background: #10b981;
         }
         
         /* Print styles */
@@ -471,15 +525,20 @@ Generated on ${new Date().toLocaleDateString()}
             }
             
             .website::after {
-                content: " (" attr(href) ")";
+                content: " (" attr(data-url) ")";
                 font-size: 12px;
                 color: #666;
+            }
+            
+            .smartbiz-link {
+                background: transparent;
+                border: 1px solid #ddd;
             }
         }
     </style>
 </head>
 <body>
-    <div id="link-notice" class="link-notice">Link copied to clipboard!</div>
+    <div id="link-notice" class="link-notice"></div>
     
     <div class="business-card">
         <div class="card-left">
@@ -530,54 +589,107 @@ Generated on ${new Date().toLocaleDateString()}
                     <strong>Established:</strong> ${businessData.established}<br>
                     <strong>Tax ID:</strong> ${businessData.taxId}
                 </div>
-                <span class="website" id="website-link">${businessData.website}</span>
+                <div class="website-links">
+                    <span class="website" id="website-link" data-url="${websiteUrl}">${businessData.website}</span>
+                    <div style="margin-top: 8px;">
+                        <span class="smartbiz-link" id="smartbiz-link">SmartBiz OS</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
     <script>
+        // Show notification
+        function showNotice(message, type = 'info') {
+            const notice = document.getElementById('link-notice');
+            notice.textContent = message;
+            notice.className = 'link-notice ' + type;
+            notice.style.display = 'block';
+            
+            setTimeout(() => {
+                notice.style.opacity = '0';
+                notice.style.transform = 'translateX(-50%) translateY(-20px)';
+                
+                setTimeout(() => {
+                    notice.style.display = 'none';
+                    notice.style.opacity = '1';
+                    notice.style.transform = 'translateX(-50%) translateY(0)';
+                }, 300);
+            }, 3000);
+        }
+        
         // Handle website link click
         document.getElementById('website-link').addEventListener('click', function(e) {
             e.preventDefault();
             
-            // Try to open in new tab first
-            const websiteUrl = '${businessData.website.startsWith('http') ? businessData.website : 'https://' + businessData.website}';
+            const websiteUrl = this.getAttribute('data-url');
             
             // Copy to clipboard
             navigator.clipboard.writeText(websiteUrl).then(() => {
-                // Show notice
-                const notice = document.getElementById('link-notice');
-                notice.textContent = 'Website link copied to clipboard: ' + websiteUrl;
-                notice.style.display = 'block';
+                showNotice('✓ Website link copied to clipboard', 'success');
                 
-                setTimeout(() => {
-                    notice.style.display = 'none';
-                }, 3000);
-                
-                // Try to open the link
+                // Try to open the link with safety warning
                 try {
-                    window.open(websiteUrl, '_blank');
+                    const userConfirmed = confirm(
+                        'This website may not have a valid SSL certificate.\\n\\n' +
+                        'URL: ' + websiteUrl + '\\n\\n' +
+                        'Do you want to proceed anyway?'
+                    );
+                    
+                    if (userConfirmed) {
+                        const link = document.createElement('a');
+                        link.href = websiteUrl;
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
                 } catch (err) {
-                    // If window.open fails, just show the URL
-                    notice.textContent = 'Cannot open link from local file. Copied to clipboard: ' + websiteUrl;
+                    showNotice('⚠️ Cannot open from local file. Link copied.', 'warning');
                 }
             }).catch(err => {
-                // Fallback for browsers that don't support clipboard API
-                const notice = document.getElementById('link-notice');
-                notice.textContent = 'Website: ' + websiteUrl + ' (Right-click to copy)';
-                notice.style.display = 'block';
+                // Fallback for browsers without clipboard API
+                showNotice('📋 Right-click to copy: ' + websiteUrl, 'warning');
+            });
+        });
+        
+        // Handle SmartBiz OS link click
+        document.getElementById('smartbiz-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const smartbizUrl = 'https://smartbizos.netlify.app';
+            
+            // Copy to clipboard first
+            navigator.clipboard.writeText(smartbizUrl).then(() => {
+                showNotice('✓ SmartBiz OS link copied to clipboard', 'success');
                 
-                setTimeout(() => {
-                    notice.style.display = 'none';
-                }, 5000);
+                // Open SmartBiz OS (this should work fine with Netlify SSL)
+                try {
+                    window.open(smartbizUrl, '_blank', 'noopener,noreferrer');
+                } catch (err) {
+                    // If window.open fails
+                    showNotice('⚠️ Opening SmartBiz OS...', 'warning');
+                    setTimeout(() => {
+                        window.location.href = smartbizUrl;
+                    }, 100);
+                }
+            }).catch(err => {
+                // Direct open if clipboard fails
+                try {
+                    window.open(smartbizUrl, '_blank', 'noopener,noreferrer');
+                    showNotice('🔗 Opening SmartBiz OS...', 'info');
+                } catch (err) {
+                    showNotice('📋 SmartBiz OS: ' + smartbizUrl, 'warning');
+                }
             });
         });
         
         // Handle QR box click
         document.getElementById('qr-box').addEventListener('click', function() {
-            // Create a simple text representation of business card
-            const cardInfo = \`
-${businessData.businessName}
+            // Create business card text
+            const cardInfo = \`${businessData.businessName}
 ${businessData.businessType}
 
 ${businessData.ownerName}
@@ -586,18 +698,15 @@ ${businessData.phone}
 ${businessData.address}
 ${businessData.website}
 
+SmartBiz OS: https://smartbizos.netlify.app
+
 Established: ${businessData.established}
-Tax ID: ${businessData.taxId}
-            \`;
+Tax ID: ${businessData.taxId}\`;
             
             navigator.clipboard.writeText(cardInfo).then(() => {
-                const notice = document.getElementById('link-notice');
-                notice.textContent = 'Business card info copied to clipboard!';
-                notice.style.display = 'block';
-                
-                setTimeout(() => {
-                    notice.style.display = 'none';
-                }, 3000);
+                showNotice('✓ Business card info copied to clipboard', 'success');
+            }).catch(err => {
+                showNotice('📋 Right-click to copy business info', 'warning');
             });
         });
         
@@ -606,36 +715,48 @@ Tax ID: ${businessData.taxId}
             window.print();
         });
         
-        // Mobile touch support for print
-        let touchTimer;
+        // Mobile touch support
+        let tapCount = 0;
+        let tapTimer;
+        
         document.querySelector('.business-card').addEventListener('touchstart', function() {
-            touchTimer = setTimeout(() => {
-                alert('Double tap this card to print it');
-            }, 500);
+            tapCount++;
+            
+            if (tapCount === 1) {
+                tapTimer = setTimeout(() => {
+                    tapCount = 0;
+                }, 300);
+            } else if (tapCount === 2) {
+                clearTimeout(tapTimer);
+                tapCount = 0;
+                window.print();
+            }
         });
         
-        document.querySelector('.business-card').addEventListener('touchend', function() {
-            clearTimeout(touchTimer);
-        });
-        
-        document.querySelector('.business-card').addEventListener('touchmove', function() {
-            clearTimeout(touchTimer);
-        });
-        
-        // Add right-click context menu for copy
+        // Add context menu for copy
         document.querySelectorAll('.contact-details p').forEach(element => {
             element.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 navigator.clipboard.writeText(this.textContent).then(() => {
-                    const notice = document.getElementById('link-notice');
-                    notice.textContent = 'Copied: ' + this.textContent;
-                    notice.style.display = 'block';
-                    
-                    setTimeout(() => {
-                        notice.style.display = 'none';
-                    }, 2000);
+                    showNotice('✓ Copied: ' + this.textContent, 'success');
                 });
             });
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+                showNotice('🖨️ Printing business card...', 'info');
+            }
+            
+            if (e.ctrlKey && e.key === 'c') {
+                const selection = window.getSelection().toString();
+                if (selection) {
+                    showNotice('✓ Text copied', 'success');
+                }
+            }
         });
     </script>
 </body>
@@ -653,7 +774,7 @@ Tax ID: ${businessData.taxId}
     URL.revokeObjectURL(url);
 
     setTimeout(() => setIsGenerating(false), 1000);
-  };
+};
 
   // Simple share function
   const shareBusinessCard = () => {

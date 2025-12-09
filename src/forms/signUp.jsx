@@ -311,6 +311,19 @@ function BusinessSignup() {
                     <span className="font-medium">{business.timezone}</span>
                   </div>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Business Website
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={business.website}
+                    onChange={(e) => setBusiness({...business, website: e.target.value})}
+                    placeholder="www.yourbusiness.com"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
               </div>
               
               {/* Location Preview */}

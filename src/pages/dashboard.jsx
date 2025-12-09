@@ -275,7 +275,7 @@ export default function Dashboard() {
 			{/* Middle Section */}
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 				{/* Chart Placeholder with Time Filter */}
-				<div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
+				<div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-2 md:p-6">
 					<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
 						<div>
 							<h3 className="text-lg font-semibold text-gray-800">Financial Overview</h3>

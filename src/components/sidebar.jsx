@@ -145,6 +145,12 @@ export default function Sidebar({ active, onclick }) {
                         Get Assistance
                     </button>
                 </div>
+                <Link to="/signUp" className="mt-6 block text-center text-xs text-gray-400 hover:underline">
+                    <div Link className="mt-8 px-4 py-2 bg-linear-to-r text-black from-red-50 to-orange-50 font-bold flex justify-center rounded-xl border border-blue-100">
+                        Log Out
+                    </div>
+                </Link>
+
             </nav>
 
             {/* Footer */}
@@ -158,12 +164,14 @@ export default function Sidebar({ active, onclick }) {
                         <p className="text-xs text-gray-500">{businessInfo.businessType}</p>
                     </div>
                 </div>
-                <div className="text-xs text-gray-400 text-center">
+                <div className="text-xs text-gray-400 text-center"
+                    onClick={onclick}
+                >
                     © {new Date().getFullYear()} SmartBiz. All rights reserved.
                 </div>
             </div>
 
-            
+
         </div>
     );
 }

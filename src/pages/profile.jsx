@@ -126,394 +126,521 @@ Generated on ${new Date().toLocaleDateString()}
     setIsGenerating(true);
 
     const htmlContent = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>${businessData.businessName} - Business Card</title>
-            <style>
-                @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-                
-                * {
-                    margin: 0;
-                    padding: 0;
-                    box-sizing: border-box;
-                }
-                
-                body {
-                    font-family: 'Poppins', sans-serif;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    padding: 20px;
-                }
-                
-                .business-card {
-                    width: 100%;
-                    max-width: 800px;
-                    min-height: 450px;
-                    background: linear-gradient(145deg, #ffffff, #f0f0f0);
-                    border-radius: 25px;
-                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-                    display: flex;
-                    overflow: hidden;
-                    position: relative;
-                    flex-direction: column;
-                }
-                
-                @media (min-width: 768px) {
-                    .business-card {
-                        flex-direction: row;
-                        height: 450px;
-                    }
-                }
-                
-                .card-left {
-                    flex: 1;
-                    background: linear-gradient(135deg, #4f46e5, #7c3aed);
-                    padding: 30px;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    color: white;
-                    position: relative;
-                    overflow: hidden;
-                }
-                
-                @media (min-width: 768px) {
-                    .card-left {
-                        padding: 40px;
-                    }
-                }
-                
-                .card-left::before {
-                    content: '';
-                    position: absolute;
-                    top: -50%;
-                    right: -50%;
-                    width: 200px;
-                    height: 200px;
-                    background: rgba(255, 255, 255, 0.1);
-                    border-radius: 50%;
-                }
-                
-                .card-left::after {
-                    content: '';
-                    position: absolute;
-                    bottom: -30%;
-                    left: -30%;
-                    width: 150px;
-                    height: 150px;
-                    background: rgba(255, 255, 255, 0.08);
-                    border-radius: 50%;
-                }
-                
-                .logo {
-                    font-size: 36px;
-                    font-weight: bold;
-                    margin-bottom: 15px;
-                    color: white;
-                    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-                }
-                
-                @media (min-width: 768px) {
-                    .logo {
-                        font-size: 48px;
-                        margin-bottom: 20px;
-                    }
-                }
-                
-                .company-name {
-                    font-size: 24px;
-                    font-weight: 700;
-                    margin-bottom: 6px;
-                    line-height: 1.2;
-                    word-break: break-word;
-                }
-                
-                @media (min-width: 768px) {
-                    .company-name {
-                        font-size: 32px;
-                        margin-bottom: 8px;
-                    }
-                }
-                
-                .company-type {
-                    font-size: 14px;
-                    opacity: 0.9;
-                    margin-bottom: 20px;
-                    word-break: break-word;
-                }
-                
-                @media (min-width: 768px) {
-                    .company-type {
-                        font-size: 18px;
-                        margin-bottom: 30px;
-                    }
-                }
-                
-                .card-right {
-                    flex: 1.5;
-                    padding: 30px;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                }
-                
-                @media (min-width: 768px) {
-                    .card-right {
-                        padding: 40px;
-                    }
-                }
-                
-                .contact-info {
-                    display: flex;
-                    align-items: flex-start;
-                    margin-bottom: 15px;
-                    color: #333;
-                }
-                
-                @media (min-width: 768px) {
-                    .contact-info {
-                        margin-bottom: 20px;
-                        align-items: center;
-                    }
-                }
-                
-                .contact-icon {
-                    width: 36px;
-                    height: 36px;
-                    background: linear-gradient(135deg, #4f46e5, #7c3aed);
-                    border-radius: 8px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    margin-right: 12px;
-                    color: white;
-                    flex-shrink: 0;
-                    margin-top: 2px;
-                }
-                
-                @media (min-width: 768px) {
-                    .contact-icon {
-                        width: 40px;
-                        height: 40px;
-                        margin-right: 15px;
-                        margin-top: 0;
-                    }
-                }
-                
-                .contact-details h4 {
-                    font-size: 12px;
-                    color: #666;
-                    margin-bottom: 3px;
-                    font-weight: 500;
-                }
-                
-                @media (min-width: 768px) {
-                    .contact-details h4 {
-                        font-size: 14px;
-                        margin-bottom: 4px;
-                    }
-                }
-                
-                .contact-details p {
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #222;
-                    line-height: 1.3;
-                    word-break: break-word;
-                }
-                
-                @media (min-width: 768px) {
-                    .contact-details p {
-                        font-size: 16px;
-                    }
-                }
-                
-                .footer {
-                    margin-top: 25px;
-                    padding-top: 15px;
-                    border-top: 1px solid #e0e0e0;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 10px;
-                }
-                
-                @media (min-width: 768px) {
-                    .footer {
-                        margin-top: 30px;
-                        padding-top: 20px;
-                        flex-direction: row;
-                        justify-content: space-between;
-                        align-items: center;
-                        gap: 0;
-                    }
-                }
-                
-                .established {
-                    font-size: 12px;
-                    color: #666;
-                    line-height: 1.4;
-                }
-                
-                @media (min-width: 768px) {
-                    .established {
-                        font-size: 14px;
-                    }
-                }
-                
-                .website {
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #4f46e5;
-                    text-decoration: none;
-                    word-break: break-word;
-                }
-                
-                @media (min-width: 768px) {
-                    .website {
-                        font-size: 16px;
-                    }
-                }
-                
-                .qr-section {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    margin-top: 15px;
-                }
-                
-                @media (min-width: 768px) {
-                    .qr-section {
-                        margin-top: 20px;
-                        gap: 10px;
-                    }
-                }
-                
-                .qr-box {
-                    width: 50px;
-                    height: 50px;
-                    background: #333;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-weight: bold;
-                    border-radius: 5px;
-                    font-size: 10px;
-                }
-                
-                @media (min-width: 768px) {
-                    .qr-box {
-                        width: 60px;
-                        height: 60px;
-                        font-size: 12px;
-                    }
-                }
-                
-                .qr-text {
-                    font-size: 10px;
-                    color: rgba(255, 255, 255, 0.9);
-                }
-                
-                @media (min-width: 768px) {
-                    .qr-text {
-                        font-size: 12px;
-                    }
-                }
-                
-                /* Print styles */
-                @media print {
-                    body {
-                        background: white !important;
-                        padding: 0;
-                    }
-                    
-                    .business-card {
-                        box-shadow: none;
-                        border: 1px solid #ddd;
-                        page-break-inside: avoid;
-                    }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="business-card">
-                <div class="card-left">
-                    <div class="logo">${businessData.businessName.charAt(0)}</div>
-                    <h1 class="company-name">${businessData.businessName}</h1>
-                    <p class="company-type">${businessData.businessType}</p>
-                    
-                </div>
-                
-                <div class="card-right">
-                    <div class="contact-info">
-                        <div class="contact-icon">👤</div>
-                        <div class="contact-details">
-                            <h4>OWNER</h4>
-                            <p>${businessData.ownerName}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="contact-info">
-                        <div class="contact-icon">✉️</div>
-                        <div class="contact-details">
-                            <h4>EMAIL</h4>
-                            <p>${businessData.email}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="contact-info">
-                        <div class="contact-icon">📞</div>
-                        <div class="contact-details">
-                            <h4>PHONE</h4>
-                            <p>${businessData.phone}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="contact-info">
-                        <div class="contact-icon">📍</div>
-                        <div class="contact-details">
-                            <h4>ADDRESS</h4>
-                            <p>${businessData.address}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="footer">
-                        <div class="established">
-                            <strong>Established:</strong> ${businessData.established}<br>
-                            <strong>Tax ID:</strong> ${businessData.taxId}
-                        </div>
-                        <a href="${businessData.website}" class="website">${businessData.website}</a>
-                    </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${businessData.businessName} - Business Card</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .business-card {
+            width: 100%;
+            max-width: 800px;
+            min-height: 450px;
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            overflow: hidden;
+            position: relative;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 768px) {
+            .business-card {
+                flex-direction: row;
+                height: 450px;
+            }
+        }
+        
+        .card-left {
+            flex: 1;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        @media (min-width: 768px) {
+            .card-left {
+                padding: 40px;
+            }
+        }
+        
+        .card-left::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        .card-left::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -30%;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+        }
+        
+        .logo {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        @media (min-width: 768px) {
+            .logo {
+                font-size: 48px;
+                margin-bottom: 20px;
+            }
+        }
+        
+        .company-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+        
+        @media (min-width: 768px) {
+            .company-name {
+                font-size: 32px;
+                margin-bottom: 8px;
+            }
+        }
+        
+        .company-type {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 20px;
+            word-break: break-word;
+        }
+        
+        @media (min-width: 768px) {
+            .company-type {
+                font-size: 18px;
+                margin-bottom: 30px;
+            }
+        }
+        
+        .card-right {
+            flex: 1.5;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        @media (min-width: 768px) {
+            .card-right {
+                padding: 40px;
+            }
+        }
+        
+        .contact-info {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        @media (min-width: 768px) {
+            .contact-info {
+                margin-bottom: 20px;
+                align-items: center;
+            }
+        }
+        
+        .contact-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            color: white;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        @media (min-width: 768px) {
+            .contact-icon {
+                width: 40px;
+                height: 40px;
+                margin-right: 15px;
+                margin-top: 0;
+            }
+        }
+        
+        .contact-details h4 {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px;
+            font-weight: 500;
+        }
+        
+        @media (min-width: 768px) {
+            .contact-details h4 {
+                font-size: 14px;
+                margin-bottom: 4px;
+            }
+        }
+        
+        .contact-details p {
+            font-size: 14px;
+            font-weight: 600;
+            color: #222;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+        
+        @media (min-width: 768px) {
+            .contact-details p {
+                font-size: 16px;
+            }
+        }
+        
+        .footer {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        @media (min-width: 768px) {
+            .footer {
+                margin-top: 30px;
+                padding-top: 20px;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0;
+            }
+        }
+        
+        .established {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+        
+        @media (min-width: 768px) {
+            .established {
+                font-size: 14px;
+            }
+        }
+        
+        .website {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4f46e5;
+            text-decoration: none;
+            word-break: break-word;
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 5px 0;
+            display: inline-block;
+        }
+        
+        .website:hover {
+            color: #7c3aed;
+            text-decoration: underline;
+        }
+        
+        @media (min-width: 768px) {
+            .website {
+                font-size: 16px;
+            }
+        }
+        
+        .qr-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        @media (min-width: 768px) {
+            .qr-section {
+                margin-top: 20px;
+                gap: 10px;
+            }
+        }
+        
+        .qr-box {
+            width: 50px;
+            height: 50px;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            border-radius: 5px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        
+        .qr-box:hover {
+            background: #444;
+        }
+        
+        @media (min-width: 768px) {
+            .qr-box {
+                width: 60px;
+                height: 60px;
+                font-size: 12px;
+            }
+        }
+        
+        .qr-text {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        @media (min-width: 768px) {
+            .qr-text {
+                font-size: 12px;
+            }
+        }
+        
+        .link-notice {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4f46e5;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-size: 14px;
+            text-align: center;
+            max-width: 90%;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white !important;
+                padding: 0;
+            }
+            
+            .business-card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                page-break-inside: avoid;
+            }
+            
+            .website::after {
+                content: " (" attr(href) ")";
+                font-size: 12px;
+                color: #666;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="link-notice" class="link-notice">Link copied to clipboard!</div>
+    
+    <div class="business-card">
+        <div class="card-left">
+            <div class="logo">${businessData.businessName.charAt(0)}</div>
+            <h1 class="company-name">${businessData.businessName}</h1>
+            <p class="company-type">${businessData.businessType}</p>
+            <div class="qr-section">
+                <div class="qr-box" id="qr-box">QR</div>
+                <span class="qr-text">Scan to save contact</span>
+            </div>
+        </div>
+        
+        <div class="card-right">
+            <div class="contact-info">
+                <div class="contact-icon">👤</div>
+                <div class="contact-details">
+                    <h4>OWNER</h4>
+                    <p>${businessData.ownerName}</p>
                 </div>
             </div>
             
-            <script>
-                // Add click to print functionality
-                document.querySelector('.business-card').addEventListener('dblclick', function() {
-                    window.print();
-                });
+            <div class="contact-info">
+                <div class="contact-icon">✉️</div>
+                <div class="contact-details">
+                    <h4>EMAIL</h4>
+                    <p>${businessData.email}</p>
+                </div>
+            </div>
+            
+            <div class="contact-info">
+                <div class="contact-icon">📞</div>
+                <div class="contact-details">
+                    <h4>PHONE</h4>
+                    <p>${businessData.phone}</p>
+                </div>
+            </div>
+            
+            <div class="contact-info">
+                <div class="contact-icon">📍</div>
+                <div class="contact-details">
+                    <h4>ADDRESS</h4>
+                    <p>${businessData.address}</p>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <div class="established">
+                    <strong>Established:</strong> ${businessData.established}<br>
+                    <strong>Tax ID:</strong> ${businessData.taxId}
+                </div>
+                <span class="website" id="website-link">${businessData.website}</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Handle website link click
+        document.getElementById('website-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Try to open in new tab first
+            const websiteUrl = '${businessData.website.startsWith('http') ? businessData.website : 'https://' + businessData.website}';
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(websiteUrl).then(() => {
+                // Show notice
+                const notice = document.getElementById('link-notice');
+                notice.textContent = 'Website link copied to clipboard: ' + websiteUrl;
+                notice.style.display = 'block';
                 
-                // Mobile touch support
-                let touchStart = 0;
-                document.querySelector('.business-card').addEventListener('touchstart', function(e) {
-                    touchStart = e.touches[0].clientX;
-                });
+                setTimeout(() => {
+                    notice.style.display = 'none';
+                }, 3000);
                 
-                document.querySelector('.business-card').addEventListener('touchend', function(e) {
-                    if (e.changedTouches[0].clientX - touchStart > 50) {
-                        alert('Double tap to print this business card');
-                    }
+                // Try to open the link
+                try {
+                    window.open(websiteUrl, '_blank');
+                } catch (err) {
+                    // If window.open fails, just show the URL
+                    notice.textContent = 'Cannot open link from local file. Copied to clipboard: ' + websiteUrl;
+                }
+            }).catch(err => {
+                // Fallback for browsers that don't support clipboard API
+                const notice = document.getElementById('link-notice');
+                notice.textContent = 'Website: ' + websiteUrl + ' (Right-click to copy)';
+                notice.style.display = 'block';
+                
+                setTimeout(() => {
+                    notice.style.display = 'none';
+                }, 5000);
+            });
+        });
+        
+        // Handle QR box click
+        document.getElementById('qr-box').addEventListener('click', function() {
+            // Create a simple text representation of business card
+            const cardInfo = \`
+${businessData.businessName}
+${businessData.businessType}
+
+${businessData.ownerName}
+${businessData.email}
+${businessData.phone}
+${businessData.address}
+${businessData.website}
+
+Established: ${businessData.established}
+Tax ID: ${businessData.taxId}
+            \`;
+            
+            navigator.clipboard.writeText(cardInfo).then(() => {
+                const notice = document.getElementById('link-notice');
+                notice.textContent = 'Business card info copied to clipboard!';
+                notice.style.display = 'block';
+                
+                setTimeout(() => {
+                    notice.style.display = 'none';
+                }, 3000);
+            });
+        });
+        
+        // Add double-click to print functionality
+        document.querySelector('.business-card').addEventListener('dblclick', function() {
+            window.print();
+        });
+        
+        // Mobile touch support for print
+        let touchTimer;
+        document.querySelector('.business-card').addEventListener('touchstart', function() {
+            touchTimer = setTimeout(() => {
+                alert('Double tap this card to print it');
+            }, 500);
+        });
+        
+        document.querySelector('.business-card').addEventListener('touchend', function() {
+            clearTimeout(touchTimer);
+        });
+        
+        document.querySelector('.business-card').addEventListener('touchmove', function() {
+            clearTimeout(touchTimer);
+        });
+        
+        // Add right-click context menu for copy
+        document.querySelectorAll('.contact-details p').forEach(element => {
+            element.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                navigator.clipboard.writeText(this.textContent).then(() => {
+                    const notice = document.getElementById('link-notice');
+                    notice.textContent = 'Copied: ' + this.textContent;
+                    notice.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        notice.style.display = 'none';
+                    }, 2000);
                 });
-            </script>
-        </body>
-        </html>
-            `;
+            });
+        });
+    </script>
+</body>
+</html>
+    `;
 
     const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);

@@ -127,7 +127,7 @@ export const businessInfo = {
   email: "info@cmctechnologies.com",
   phone: "+1 (415) 555-7890",
   address: "123 Tech Valley Drive, San Francisco, CA 94107",
-  website: "smartbizos.netlify.app",
+  website: "votelinkr-ui.netlify.app",
   businessType: "Technology Solutions & IT Services",
   established: "March 12, 2015",
   taxId: "TAX-2023-CMC789",

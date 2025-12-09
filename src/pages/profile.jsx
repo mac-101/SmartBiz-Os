@@ -1054,65 +1054,59 @@ ${businessData.businessName} - All Rights Reserved
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            <div className="bg-linear-to-br from-green-50 to-green-100 rounded-lg md:rounded-xl p-4 md:p-5">
-              <div className="flex justify-between items-start">
-                <div className="min-w-0">
-                  <p className="text-xs md:text-sm text-green-700 font-medium">Total Sales</p>
-                  <h3 className="text-lg md:text-2xl font-bold text-gray-800 mt-1 truncate">₦{stats.totalSales.toLocaleString()}</h3>
+          {/* Business card action button */}
+          <div className="bg-white rounded-xl shadow-lg p-3 ">
+            <h3 className="text-base md:text-lg font-bold text-gray-800 mb-3">Export Options</h3>
+            <div className="space-y-2 md:space-y-0 relative md:flex md:gap-2">
+              {/* Save Business Card Button */}
+              <button
+                onClick={downloadHTMLBusinessCard}
+                disabled={isGenerating}
+                className="w-full flex items-center gap-2 p-3 bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  {isGenerating ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <Download size={16} />
+                  )}
                 </div>
-                <DollarSign size={20} className="text-green-500 shrink-0 ml-2 md:size-6" />
-              </div>
-              <div className="flex items-center gap-1 mt-2 md:mt-3">
-                <TrendingUp size={14} className="md:size-4 text-green-600" />
-                <span className="text-xs md:text-sm text-green-600 font-medium truncate">
-                  {stats.growthRate > 0 ? '+' : ''}{stats.growthRate}% growth
-                </span>
-              </div>
-            </div>
+                <div className="text-left flex-1 min-w-0">
+                  <p className="font-bold text-sm truncate">Save Business Card</p>
+                  <p className="text-blue-100 text-xs truncate">Download as HTML file</p>
+                </div>
+              </button>
 
-            <div className="bg-linear-to-br from-red-50 to-red-100 rounded-lg md:rounded-xl p-4 md:p-5">
-              <div className="flex justify-between items-start">
-                <div className="min-w-0">
-                  <p className="text-xs md:text-sm text-red-700 font-medium">Total Expenses</p>
-                  <h3 className="text-lg md:text-2xl font-bold text-gray-800 mt-1 truncate">₦{stats.totalExpenses.toLocaleString()}</h3>
+              {/* Share Business Card Button */}
+              <button
+                onClick={shareBusinessCard}
+                className="w-full flex items-center gap-2 p-3 bg-linear-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow"
+              >
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <Share2 size={16} />
                 </div>
-                <CreditCard size={20} className="text-red-500 shrink-0 ml-2 md:size-6" />
-              </div>
-              <div className="flex items-center gap-1 mt-2 md:mt-3">
-                <TrendingDown size={14} className="md:size-4 text-red-600" />
-                <span className="text-xs md:text-sm text-red-600 font-medium truncate">{expense.length} transactions</span>
-              </div>
-            </div>
+                <div className="text-left flex-1 min-w-0">
+                  <p className="font-bold text-sm truncate">Share Business Card</p>
+                  <p className="text-purple-100 text-xs truncate">Share or copy to clipboard</p>
+                </div>
+              </button>
 
-            <div className="bg-linear-to-br from-blue-50 to-blue-100 rounded-lg md:rounded-xl p-4 md:p-5">
-              <div className="flex justify-between items-start">
-                <div className="min-w-0">
-                  <p className="text-xs md:text-sm text-blue-700 font-medium">Active Products</p>
-                  <h3 className="text-lg md:text-2xl font-bold text-gray-800 mt-1 truncate">{stats.activeProducts}</h3>
+              {/* Download Full Profile Button */}
+              <button
+                onClick={downloadBusinessSummary}
+                className="w-full flex items-center gap-2 p-3 bg-linear-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow"
+              >
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <FileText size={16} />
                 </div>
-                <Package size={20} className="text-blue-500 shrink-0 ml-2 md:size-6" />
-              </div>
-              <div className="text-xs md:text-sm text-blue-600 mt-2 md:mt-3 truncate">
-                {inventory.filter(item => item.quantity < item.reorderLevel).length} need reorder
-              </div>
-            </div>
-
-            <div className="bg-linear-to-br from-purple-50 to-purple-100 rounded-lg md:rounded-xl p-4 md:p-5">
-              <div className="flex justify-between items-start">
-                <div className="min-w-0">
-                  <p className="text-xs md:text-sm text-purple-700 font-medium">Customers</p>
-                  <h3 className="text-lg md:text-2xl font-bold text-gray-800 mt-1 truncate">{stats.customerCount}</h3>
+                <div className="text-left flex-1 min-w-0 w-full">
+                  <p className="font-bold text-sm truncate">Save Full Profile</p>
+                  <p className="text-indigo-100 text-xs truncate">Download complete summary</p>
                 </div>
-                <Users size={20} className="text-purple-500 shrink-0 ml-2 md:size-6" />
-              </div>
-              <div className="flex items-center gap-1 mt-2 md:mt-3">
-                <Target size={14} className="md:size-4 text-purple-600" />
-                <span className="text-xs md:text-sm text-purple-600 truncate">{sales.length} total sales</span>
-              </div>
+              </button>
             </div>
           </div>
+          
 
           {/* Recent Transactions */}
           <div className="bg-white rounded-xl md:rounded-2xl shadow-lg p-4 md:p-6">
@@ -1254,57 +1248,7 @@ ${businessData.businessName} - All Rights Reserved
           </div>
 
           {/* Action Buttons */}
-          <div className="bg-white rounded-xl shadow-lg p-3 md:p-4">
-            <h3 className="text-base md:text-lg font-bold text-gray-800 mb-3">Export Options</h3>
-            <div className="space-y-2">
-              {/* Save Business Card Button */}
-              <button
-                onClick={downloadHTMLBusinessCard}
-                disabled={isGenerating}
-                className="w-full flex items-center gap-2 p-3 bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                  {isGenerating ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : (
-                    <Download size={16} />
-                  )}
-                </div>
-                <div className="text-left flex-1 min-w-0">
-                  <p className="font-bold text-sm truncate">Save Business Card</p>
-                  <p className="text-blue-100 text-xs truncate">Download as HTML file</p>
-                </div>
-              </button>
-
-              {/* Share Business Card Button */}
-              <button
-                onClick={shareBusinessCard}
-                className="w-full flex items-center gap-2 p-3 bg-linear-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow"
-              >
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                  <Share2 size={16} />
-                </div>
-                <div className="text-left flex-1 min-w-0">
-                  <p className="font-bold text-sm truncate">Share Business Card</p>
-                  <p className="text-purple-100 text-xs truncate">Share or copy to clipboard</p>
-                </div>
-              </button>
-
-              {/* Download Full Profile Button */}
-              <button
-                onClick={downloadBusinessSummary}
-                className="w-full flex items-center gap-2 p-3 bg-linear-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow"
-              >
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                  <FileText size={16} />
-                </div>
-                <div className="text-left flex-1 min-w-0">
-                  <p className="font-bold text-sm truncate">Save Full Profile</p>
-                  <p className="text-indigo-100 text-xs truncate">Download complete summary</p>
-                </div>
-              </button>
-            </div>
-          </div>
+          
 
           {/* Business Description */}
           <div className="bg-white rounded-xl md:rounded-2xl shadow-lg p-4 md:p-6">

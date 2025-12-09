@@ -20,7 +20,7 @@ export default function Sidebar({ active, onclick }) {
         { path: "/sales", label: "Sales", icon: ShoppingCart, color: "text-green-600", bg: "bg-green-50" },
         { path: "/expenses", label: "Expenses", icon: Receipt, color: "text-red-600", bg: "bg-red-50" },
         { path: "/inventory", label: "Inventory", icon: FolderKanban, color: "text-purple-600", bg: "bg-purple-50" },
-        { path: "/Reports", label: "Reports", icon: BarChart3, color: "text-amber-600", bg: "bg-amber-50" },
+        // { path: "/Reports", label: "Reports", icon: BarChart3, color: "text-amber-600", bg: "bg-amber-50" },
         { path: "/assistant", label: "AI Assistant", icon: Bot, color: "text-cyan-600", bg: "bg-cyan-50" },
         { path: "/profile", label: "Profile", icon: UserCircle, color: "text-gray-600", bg: "bg-gray-50" },
         { path: "/settings", label: "Settings", icon: Settings, color: "text-gray-600", bg: "bg-gray-50" },

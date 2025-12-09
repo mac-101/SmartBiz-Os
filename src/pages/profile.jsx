@@ -796,6 +796,7 @@ ${businessData.description}`;
       navigator.share({
         title: `${businessData.businessName} - Business Card`,
         text: shareText,
+        url: `${businessData.website}`,
       }).catch(console.error);
     } else {
       navigator.clipboard.writeText(shareText)

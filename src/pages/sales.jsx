@@ -200,7 +200,7 @@ export default function Sales() {
         {/* Summary Cards */}
         <div className="flex flex-wrap gap-4">
           {/* Total Revenue Card */}
-          <div className="bg-linear-to-r from-blue-500 to-blue-600 text-white px-4 sm:px-6 py-4 rounded-2xl shadow-lg flex-1 min-w-40 sm:min-w-[210px]">
+          <div className="border border-blue-600 bg-white text-black px-4 sm:px-6 py-4 rounded-2xl shadow-lg flex-1 min-w-40 sm:min-w-[210px]">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,7 +216,7 @@ export default function Sales() {
           </div>
 
           {/* Items Sold Card */}
-          <div className="bg-linear-to-r from-green-500 to-green-600 text-white px-4 sm:px-6 py-4 rounded-2xl shadow-lg flex-1 min-w-40 sm:min-w-[180px]">
+          <div className="border border-green-600 text-black bg-white px-4 sm:px-6 py-4 rounded-2xl shadow-lg flex-1 min-w-40 sm:min-w-[180px]">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

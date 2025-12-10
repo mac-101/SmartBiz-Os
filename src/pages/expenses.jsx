@@ -120,7 +120,7 @@ export default function Expenses() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full md:w-auto">
           {/* Total Expenses Card */}
-          <div className="bg-linear-to-r from-red-500 to-red-600 text-white p-5 rounded-2xl shadow-lg">
+          <div className="border border-red-500 text-black bg-white p-5 rounded-2xl shadow-lg">
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
@@ -133,7 +133,7 @@ export default function Expenses() {
                   <p className="text-2xl font-bold truncate mt-1">{totalExpenses.toLocaleString()}₦</p>
                 </div>
               </div>
-              <div className="mt-auto pt-3 border-t border-white/20">
+              <div className="mt-auto pt-3 border-t border-red-600/20">
                 <p className="text-xs opacity-80 truncate">
                   {timeFilter === 'today' ? 'Today' :
                     timeFilter === 'week' ? 'This Week' :
@@ -148,7 +148,7 @@ export default function Expenses() {
 
           {/* Highest Expense Card */}
 
-          <div className="bg-linear-to-r from-orange-500 to-orange-600 text-white p-5 rounded-2xl shadow-lg">
+          <div className="border border-orange-600 text-black bg-white p-5 rounded-2xl shadow-lg">
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
@@ -161,7 +161,7 @@ export default function Expenses() {
                   <p className="text-2xl font-bold truncate mt-1">{highestExpense.toLocaleString()}₦</p>
                 </div>
               </div>
-              <div className="mt-auto pt-3 border-t border-white/20">
+              <div className="mt-auto pt-3 border-t border-orange-600/20">
                 <p className="text-xs opacity-80 truncate">
                   {sortOrder === 'highest' ? 'Sorted by Highest' : 'Single transaction'}
                 </p>
@@ -170,7 +170,7 @@ export default function Expenses() {
           </div>
 
           {/* Average Expense Card */}
-          <div className="bg-linear-to-r from-amber-500 to-amber-600 text-white p-5 rounded-2xl shadow-lg">
+          <div className="border border-amber-600 text-black bg-white p-5 rounded-2xl shadow-lg">
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
@@ -185,7 +185,7 @@ export default function Expenses() {
                   </p>
                 </div>
               </div>
-              <div className="mt-auto pt-3 border-t border-white/20">
+              <div className="mt-auto pt-3 border-t border-amber-600/20">
                 <p className="text-xs opacity-80 truncate">
                   Based on {filteredExpenses.length} records
                 </p>

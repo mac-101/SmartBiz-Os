@@ -206,7 +206,7 @@ export default function Dashboard() {
 
 			{/* Top Stats */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-				<div className="bg-linear-to-br from-blue-50 to-white p-6 rounded-2xl shadow-lg border border-blue-100 hover:shadow-xl transition-shadow duration-300">
+				<div className="bg-linear-to-br bg-white p-6 rounded-2xl shadow-lg border border-blue-100 hover:shadow-xl transition-shadow duration-300">
 					<div className="flex items-center justify-between">
 						<div className="">
 							<p className="text-sm font-medium text-blue-600">Sales</p>
@@ -223,7 +223,7 @@ export default function Dashboard() {
 					</div>
 				</div>
 
-				<div className="bg-linear-to-br from-red-50 to-white p-6 rounded-2xl shadow-lg border border-red-100 hover:shadow-xl transition-shadow duration-300">
+				<div className="bg-linear-to-br bg-white p-6 rounded-2xl shadow-lg border border-red-100 hover:shadow-xl transition-shadow duration-300">
 					<div className="flex items-center justify-between">
 						<div className="">
 							<p className="text-sm font-medium text-red-600">Expenses</p>
@@ -241,7 +241,7 @@ export default function Dashboard() {
 					</div>
 				</div>
 
-				<div className="bg-linear-to-br from-green-50 to-white p-6 rounded-2xl shadow-lg border border-green-100 hover:shadow-xl transition-shadow duration-300">
+				<div className="bg-linear-to-br bg-white p-6 rounded-2xl shadow-lg border border-green-100 hover:shadow-xl transition-shadow duration-300">
 					<div className="flex items-center justify-between">
 						<div>
 							<p className="text-sm font-medium text-green-600 mb-1">Inventory Items</p>
@@ -256,7 +256,7 @@ export default function Dashboard() {
 					</div>
 				</div>
 
-				<div className="bg-linear-to-br from-amber-50 to-white p-6 rounded-2xl shadow-lg border border-amber-100 hover:shadow-xl transition-shadow duration-300">
+				<div className="bg-linear-to-br bg-white p-6 rounded-2xl shadow-lg border border-amber-100 hover:shadow-xl transition-shadow duration-300">
 					<div className="flex items-center justify-between">
 						<div>
 							<p className="text-sm font-medium text-amber-600 mb-1">Low Stock Alerts</p>

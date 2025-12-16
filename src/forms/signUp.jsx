@@ -1,9 +1,22 @@
 import React, { useState } from 'react';
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth"; // Firebase Auth imports
+
+import { useNavigate } from 'react-router-dom';
+import { ref, set, get } from "firebase/database"; // RTDB imports
+import { auth, db } from "../../firebase.config";
 
 function BusinessSignup() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState([]);
-  
+  const isValidEmail = (email) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const [loading, setLoading] = useState(false);
+
+
   const [business, setBusiness] = useState({
     name: '',
     type: '',
@@ -19,7 +32,7 @@ function BusinessSignup() {
     industry: '',
     logo: null
   });
-  
+
   const [admin, setAdmin] = useState({
     fullName: '',
     email: '',
@@ -27,14 +40,14 @@ function BusinessSignup() {
     confirmPassword: '',
     phone: ''
   });
-  
+
   const businessTypes = ['Retail', 'Services', 'Restaurant', 'E-commerce', 'Manufacturing', 'Healthcare', 'Education', 'Other'];
   const countries = ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'United States', 'United Kingdom'];
   const industries = ['Technology', 'Retail', 'Food & Beverage', 'Healthcare', 'Education', 'Finance', 'Real Estate', 'Transportation'];
-  
+
   // Check if current step is complete
   const isStepComplete = (stepNum) => {
-    switch(stepNum) {
+    switch (stepNum) {
       case 1:
         return business.name && business.type && business.email;
       case 2:
@@ -45,7 +58,7 @@ function BusinessSignup() {
         return false;
     }
   };
-  
+
   // Handle next step
   const handleNext = () => {
     if (isStepComplete(step)) {
@@ -55,25 +68,84 @@ function BusinessSignup() {
       setStep(step + 1);
     }
   };
-  
+
   // Handle previous step
   const handlePrevious = () => {
     if (step > 1) {
       setStep(step - 1);
     }
   };
-  
+
   // Handle final submit
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isStepComplete(step)) {
-      const businessData = { ...business, admin };
-      console.log('Business Signup Data:', businessData);
-      alert('Business account created successfully!');
-      // Here you would save to localStorage or backend
+
+    setLoading(true);
+
+    if (!isValidEmail(admin.email)) {
+      console.log("Please enter a valid email.");
+      setLoading(false);
+      return;
     }
+
+    if (admin.confirmPassword.length < 6) {
+      console.log("Password must be at least 6 characters.");
+      setLoading(false);
+      return;
+    }
+    try {
+
+      const createUser = await createUserWithEmailAndPassword(auth, admin.email, admin.confirmPassword)
+      const user = createUser.user;
+
+      await updateProfile(user, {
+        displayName: admin.fullName
+      });
+
+      await set(ref(db, 'businesses/' + user.uid), {
+        businessInfo: business,
+        adminInfo: {
+          fullName: admin.fullName,
+          email: admin.email,
+          phone: admin.phone
+        },
+        createdAt: new Date().toISOString()
+      });
+
+      console.log("Business account created successfully!");
+      setBusiness({
+        name: '',
+        type: '',
+        email: '',
+        phone: '',
+        country: 'Nigeria',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        currency: 'NGN',
+        timezone: 'Africa/Lagos',
+        industry: '',
+        logo: null
+      });
+      setAdmin({
+        fullName: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        phone: ''
+      });
+
+      navigate('/');
+
+    } catch (error) {
+      console.error("Error creating business account:", error);
+    } finally {
+      setLoading(false);
+    }
+
   };
-  
+
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
@@ -82,18 +154,18 @@ function BusinessSignup() {
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Create Your Business Account</h1>
           <p className="text-gray-600">Set up your business in 3 simple steps</p>
         </div>
-        
+
         {/* Progress Bar */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
             {[1, 2, 3].map((stepNum) => (
               <div key={stepNum} className="flex flex-col items-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg
-                  ${stepNum < step || completedSteps.includes(stepNum) 
-                    ? 'bg-green-500' 
-                    : stepNum === step 
-                    ? 'bg-blue-600' 
-                    : 'bg-gray-300'}`}
+                  ${stepNum < step || completedSteps.includes(stepNum)
+                    ? 'bg-green-500'
+                    : stepNum === step
+                      ? 'bg-blue-600'
+                      : 'bg-gray-300'}`}
                 >
                   {stepNum < step || completedSteps.includes(stepNum) ? '✓' : stepNum}
                 </div>
@@ -104,22 +176,22 @@ function BusinessSignup() {
             ))}
           </div>
           <div className="h-2 bg-gray-200 rounded-full">
-            <div 
+            <div
               className="h-full bg-blue-600 rounded-full transition-all duration-300"
               style={{ width: `${((step - 1) / 2) * 100}%` }}
             ></div>
           </div>
         </div>
-        
+
         {/* Form Sections */}
         <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          
+
           {/* Step 1: Business Information */}
           {step === 1 && (
             <div className="space-y-6 animate-fadeIn">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Business Information</h2>
               <p className="text-gray-600 mb-6">Tell us about your business</p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -129,12 +201,12 @@ function BusinessSignup() {
                     type="text"
                     required
                     value={business.name}
-                    onChange={(e) => setBusiness({...business, name: e.target.value})}
+                    onChange={(e) => setBusiness({ ...business, name: e.target.value })}
                     placeholder="e.g., Tech Solutions Ltd"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Business Type *
@@ -142,7 +214,7 @@ function BusinessSignup() {
                   <select
                     required
                     value={business.type}
-                    onChange={(e) => setBusiness({...business, type: e.target.value})}
+                    onChange={(e) => setBusiness({ ...business, type: e.target.value })}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select Type</option>
@@ -151,7 +223,7 @@ function BusinessSignup() {
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Business Email *
@@ -160,12 +232,12 @@ function BusinessSignup() {
                     type="email"
                     required
                     value={business.email}
-                    onChange={(e) => setBusiness({...business, email: e.target.value})}
+                    onChange={(e) => setBusiness({ ...business, email: e.target.value })}
                     placeholder="contact@yourbusiness.com"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Business Phone *
@@ -174,12 +246,12 @@ function BusinessSignup() {
                     type="tel"
                     required
                     value={business.phone}
-                    onChange={(e) => setBusiness({...business, phone: e.target.value})}
+                    onChange={(e) => setBusiness({ ...business, phone: e.target.value })}
                     placeholder="+234 801 234 5678"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Country *
@@ -187,7 +259,7 @@ function BusinessSignup() {
                   <select
                     required
                     value={business.country}
-                    onChange={(e) => setBusiness({...business, country: e.target.value})}
+                    onChange={(e) => setBusiness({ ...business, country: e.target.value })}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     {countries.map(country => (
@@ -195,14 +267,14 @@ function BusinessSignup() {
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Industry
                   </label>
                   <select
                     value={business.industry}
-                    onChange={(e) => setBusiness({...business, industry: e.target.value})}
+                    onChange={(e) => setBusiness({ ...business, industry: e.target.value })}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select Industry</option>
@@ -212,7 +284,7 @@ function BusinessSignup() {
                   </select>
                 </div>
               </div>
-              
+
               {/* Business Preview */}
               <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <h3 className="font-semibold text-blue-800 mb-2">Business Preview</h3>
@@ -230,13 +302,13 @@ function BusinessSignup() {
               </div>
             </div>
           )}
-          
+
           {/* Step 2: Location Details */}
           {step === 2 && (
             <div className="space-y-6 animate-fadeIn">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Location Details</h2>
               <p className="text-gray-600 mb-6">Where is your business located?</p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -246,12 +318,12 @@ function BusinessSignup() {
                     type="text"
                     required
                     value={business.address}
-                    onChange={(e) => setBusiness({...business, address: e.target.value})}
+                    onChange={(e) => setBusiness({ ...business, address: e.target.value })}
                     placeholder="123 Business Street"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     City *
@@ -260,12 +332,12 @@ function BusinessSignup() {
                     type="text"
                     required
                     value={business.city}
-                    onChange={(e) => setBusiness({...business, city: e.target.value})}
+                    onChange={(e) => setBusiness({ ...business, city: e.target.value })}
                     placeholder="e.g., Lagos"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     State/Province *
@@ -274,12 +346,12 @@ function BusinessSignup() {
                     type="text"
                     required
                     value={business.state}
-                    onChange={(e) => setBusiness({...business, state: e.target.value})}
+                    onChange={(e) => setBusiness({ ...business, state: e.target.value })}
                     placeholder="e.g., Lagos State"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     ZIP/Postal Code *
@@ -288,12 +360,12 @@ function BusinessSignup() {
                     type="text"
                     required
                     value={business.zipCode}
-                    onChange={(e) => setBusiness({...business, zipCode: e.target.value})}
+                    onChange={(e) => setBusiness({ ...business, zipCode: e.target.value })}
                     placeholder="100001"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Currency
@@ -302,7 +374,7 @@ function BusinessSignup() {
                     <span className="font-medium">{business.currency === 'NGN' ? '₦ Nigerian Naira' : business.currency}</span>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Time Zone
@@ -319,13 +391,13 @@ function BusinessSignup() {
                     type="text"
                     required
                     value={business.website}
-                    onChange={(e) => setBusiness({...business, website: e.target.value})}
+                    onChange={(e) => setBusiness({ ...business, website: e.target.value })}
                     placeholder="www.yourbusiness.com"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
-              
+
               {/* Location Preview */}
               <div className="mt-8 p-4 bg-green-50 rounded-lg border border-green-100">
                 <h3 className="font-semibold text-green-800 mb-2">Location Preview</h3>
@@ -339,13 +411,13 @@ function BusinessSignup() {
               </div>
             </div>
           )}
-          
+
           {/* Step 3: Admin Account */}
           {step === 3 && (
             <div className="space-y-6 animate-fadeIn">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Admin Account</h2>
               <p className="text-gray-600 mb-6">Create your administrator account</p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -355,12 +427,12 @@ function BusinessSignup() {
                     type="text"
                     required
                     value={admin.fullName}
-                    onChange={(e) => setAdmin({...admin, fullName: e.target.value})}
+                    onChange={(e) => setAdmin({ ...admin, fullName: e.target.value })}
                     placeholder="John Doe"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email Address *
@@ -369,12 +441,12 @@ function BusinessSignup() {
                     type="email"
                     required
                     value={admin.email}
-                    onChange={(e) => setAdmin({...admin, email: e.target.value})}
+                    onChange={(e) => setAdmin({ ...admin, email: e.target.value })}
                     placeholder="john@yourbusiness.com"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Password *
@@ -383,13 +455,13 @@ function BusinessSignup() {
                     type="password"
                     required
                     value={admin.password}
-                    onChange={(e) => setAdmin({...admin, password: e.target.value})}
+                    onChange={(e) => setAdmin({ ...admin, password: e.target.value })}
                     placeholder="••••••••"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">Minimum 8 characters with letters and numbers</p>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Confirm Password *
@@ -398,7 +470,7 @@ function BusinessSignup() {
                     type="password"
                     required
                     value={admin.confirmPassword}
-                    onChange={(e) => setAdmin({...admin, confirmPassword: e.target.value})}
+                    onChange={(e) => setAdmin({ ...admin, confirmPassword: e.target.value })}
                     placeholder="••••••••"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -406,7 +478,7 @@ function BusinessSignup() {
                     <p className="text-xs text-red-600 mt-1">Passwords do not match</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Phone Number
@@ -414,13 +486,13 @@ function BusinessSignup() {
                   <input
                     type="tel"
                     value={admin.phone}
-                    onChange={(e) => setAdmin({...admin, phone: e.target.value})}
+                    onChange={(e) => setAdmin({ ...admin, phone: e.target.value })}
                     placeholder="+234 801 234 5678"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
-              
+
               {/* Terms & Conditions */}
               <div className="mt-6">
                 <label className="flex items-center space-x-3">
@@ -429,7 +501,7 @@ function BusinessSignup() {
                     I agree to the <a href="#" className="text-blue-600 hover:underline">Terms of Service</a> and <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>
                   </span>
                 </label>
-                
+
                 <label className="flex items-center space-x-3 mt-3">
                   <input type="checkbox" className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                   <span className="text-sm text-gray-700">
@@ -437,7 +509,7 @@ function BusinessSignup() {
                   </span>
                 </label>
               </div>
-              
+
               {/* Account Preview */}
               <div className="mt-8 p-4 bg-purple-50 rounded-lg border border-purple-100">
                 <h3 className="font-semibold text-purple-800 mb-2">Account Preview</h3>
@@ -456,32 +528,30 @@ function BusinessSignup() {
               </div>
             </div>
           )}
-          
+
           {/* Navigation Buttons */}
           <div className="flex justify-between mt-10 pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={handlePrevious}
               disabled={step === 1}
-              className={`px-6 py-3 rounded-lg font-medium ${
-                step === 1 
-                  ? 'text-gray-400 cursor-not-allowed' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
+              className={`px-6 py-3 rounded-lg font-medium ${step === 1
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-gray-700 hover:bg-gray-100'
+                }`}
             >
               ← Previous
             </button>
-            
+
             {step < 3 ? (
               <button
                 type="button"
                 onClick={handleNext}
                 disabled={!isStepComplete(step)}
-                className={`px-8 py-3 rounded-lg font-medium ${
-                  !isStepComplete(step)
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
+                className={`px-8 py-3 rounded-lg font-medium ${!isStepComplete(step)
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
               >
                 Continue → Next Step
               </button>
@@ -490,18 +560,17 @@ function BusinessSignup() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={!isStepComplete(step)}
-                className={`px-8 py-3 rounded-lg font-medium ${
-                  !isStepComplete(step)
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
+                className={`px-8 py-3 rounded-lg font-medium ${!isStepComplete(step)
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
               >
-                🎉 Create Business Account
+                {loading ? "Creating Account..." : "Create Account"}
               </button>
             )}
           </div>
         </div>
-        
+
         {/* Progress Summary */}
         <div className="mt-8 text-center text-sm text-gray-500">
           Step {step} of 3 • {completedSteps.length} sections completed

@@ -131,7 +131,7 @@ export default function FloatingBtn({ formOpeners }) {
       </div>
 
       {/* Add this to your global CSS or Tailwind config for animation */}
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from {
             opacity: 0;

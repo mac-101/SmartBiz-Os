@@ -5,12 +5,17 @@ import { LayoutDashboard, X } from "lucide-react";
 import SaleForm from "../forms/saleForm.jsx";
 import InventoryForm from "../forms/inventoryForm.jsx";
 import ExpenseForm from "../forms/expenceForm.jsx";
+import { Outlet, useLocation } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../../firebase.config";
 
-export function AppLayout({ children }) {
+export function AppLayout() {
+    const location = useLocation();
     const [isSidebarVisible, setSidebarVisible] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [formType, setFormType] = useState("sale");
     const [click, setClick] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     const formOpeners = {
         openSaleForm: () => { setFormType("sale"); setShowForm(true); },
@@ -38,6 +43,18 @@ export function AppLayout({ children }) {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
+    const handleLogout = async () => {
+        try {
+            setLoading(true);
+            await signOut(auth);
+            console.log("User signed out");
+        } catch (error) {
+            console.error("Error signing out:", error);
+        } finally {
+            setLoading(false);
+        }
+  };
+
     const renderForm = () => {
         const forms = {
             sale: <SaleForm onClose={closeForm} />,
@@ -47,17 +64,19 @@ export function AppLayout({ children }) {
         return forms[formType] || forms.sale;
     };
 
-    const sideBar = ["/signUp"].includes(location.pathname);
+    const sideBar = ["/signup", "/login"].includes(location.pathname);
 
     return (
-        <div className="w-full min-h-screen">
+        <div className="w-full min-h-screen flex flex-col md:flex-row">
+            {/* Sidebar */}
             {!sideBar && isSidebarVisible && (
-                <div className="fixed md:relative z-40">
-                    <Sidebar active={window.location.pathname} onclick={click && toggleSidebar} />
+                <div className="fixed md:relative z-40 h-screen">
+                    <Sidebar active={location.pathname} handleLogout={handleLogout} onclick={click && toggleSidebar} />
                 </div>
             )}
 
-            <main className={`flex-1 min-h-screen transition-all duration-300 ${!sideBar && isSidebarVisible ? "lg:ml-64" : ""}`}>
+            {/* Main Content */}
+            <div className={`flex-1 min-h-screen w-full transition-all duration-300 ${!sideBar && isSidebarVisible ? "md:ml-64" : ""}`}>
                 {!sideBar && (
                     <button
                         className={`fixed top-4 left-4 z-50 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors ${isSidebarVisible ? "ml-50" : ""}`}
@@ -81,10 +100,17 @@ export function AppLayout({ children }) {
                     </div>
                 )}
 
-                <div className="w-full">
-                    <div className={`w-full p-1 ${!sideBar && "md:p-6"}`}>{children}</div>
+                {/* THIS IS THE KEY FIX - Proper Outlet container with your exact working structure */}
+                <div className="w-full min-h-screen">
+                    <div className={`w-full min-h-screen p-1 ${!sideBar && "md:p-6"}`}>
+                        <div className="w-full min-h-full">
+                            <Outlet />
+                        </div>
+                    </div>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }
+
+export default AppLayout;

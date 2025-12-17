@@ -3,17 +3,33 @@ import {
   Building2, User, Mail, Phone, MapPin, Globe,
   TrendingUp, TrendingDown, DollarSign, Package,
   Edit2, Share2, Download, Calendar,
-  Users, Target, BarChart3, CreditCard,
   FileText, QrCode, Sparkles
 } from "lucide-react";
 import { sales, expense, inventory } from "../components/data";
-import { businessInfo } from "../components/data";
+import { useFetchAllUserData } from "../components/fetch-data";
 
 export default function BusinessProfile() {
+  const { data: fetchedData, loading: dataLoading, error: dataError } = useFetchAllUserData();
   const [isEditing, setIsEditing] = useState(false);
-  const [businessData, setBusinessData] = useState(businessInfo);
+  const [businessData, setBusinessData] = useState(() => ({
+    businessName: '',
+    businessType: '',
+    ownerName: '',
+    email: '',
+    phone: '',
+    address: '',
+    website: '',
+    taxId: '',
+    description: ''
+  }));
   const [isGenerating, setIsGenerating] = useState(false);
   const businessCardRef = useRef(null);
+
+  useEffect(() => {
+    if (fetchedData) {
+      setBusinessData(prev => ({ ...prev, ...fetchedData }));
+    }
+  }, [fetchedData]);
 
   // Calculate stats from real data
   const calculateStats = () => {
@@ -99,7 +115,6 @@ export default function BusinessProfile() {
 ║  📍 ${businessData.address}                ║
 ║  🌐 ${businessData.website}                ║
 ║                                           ║
-║  📅 Established: ${businessData.established} ║
 ║  🆔 Tax ID: ${businessData.taxId}          ║
 ║                                           ║
 ║  "${businessData.description}"            ║
@@ -128,7 +143,7 @@ Generated on ${new Date().toLocaleDateString()}
     // Ensure website URL has proper protocol
     let websiteUrl = businessData.website;
     if (!websiteUrl.startsWith('http')) {
-        websiteUrl = 'https://' + websiteUrl;
+      websiteUrl = 'https://' + websiteUrl;
     }
 
     const htmlContent = `
@@ -360,17 +375,7 @@ Generated on ${new Date().toLocaleDateString()}
             }
         }
         
-        .established {
-            font-size: 12px;
-            color: #666;
-            line-height: 1.4;
-        }
         
-        @media (min-width: 768px) {
-            .established {
-                font-size: 14px;
-            }
-        }
         
         .website {
             font-size: 14px;
@@ -585,10 +590,7 @@ Generated on ${new Date().toLocaleDateString()}
             </div>
             
             <div class="footer">
-                <div class="established">
-                    <strong>Established:</strong> ${businessData.established}<br>
-                    <strong>Tax ID:</strong> ${businessData.taxId}
-                </div>
+                
                 <div class="website-links">
                     <span class="website" id="website-link" data-url="${websiteUrl}">${businessData.website}</span>
                     <div style="margin-top: 8px;">
@@ -700,7 +702,6 @@ ${businessData.website}
 
 SmartBiz OS: https://smartbizos.netlify.app
 
-Established: ${businessData.established}
 Tax ID: ${businessData.taxId}\`;
             
             navigator.clipboard.writeText(cardInfo).then(() => {
@@ -774,7 +775,7 @@ Tax ID: ${businessData.taxId}\`;
     URL.revokeObjectURL(url);
 
     setTimeout(() => setIsGenerating(false), 1000);
-};
+  };
 
   // Simple share function
   const shareBusinessCard = () => {
@@ -786,7 +787,6 @@ ${businessData.phone}
 ${businessData.address}
 
 ${businessData.businessType}
-Established: ${businessData.established}
 Tax ID: ${businessData.taxId}
 
 ${businessData.description}`;
@@ -825,7 +825,6 @@ COMPANY INFORMATION
 Business Name: ${businessData.businessName}
 Business Type: ${businessData.businessType}
 Owner: ${businessData.ownerName}
-Established: ${businessData.established}
 Tax ID: ${businessData.taxId}
 
 CONTACT DETAILS
@@ -945,7 +944,7 @@ ${businessData.businessName} - All Rights Reserved
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input
                       type="email"
-                      value={businessData.email}
+                      value={businessData.adminEmail}
                       onChange={(e) => setBusinessData({ ...businessData, email: e.target.value })}
                       className="w-full p-2 md:p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
                     />
@@ -954,7 +953,7 @@ ${businessData.businessName} - All Rights Reserved
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input
                       type="tel"
-                      value={businessData.phone}
+                      value={businessData.contact}
                       onChange={(e) => setBusinessData({ ...businessData, phone: e.target.value })}
                       className="w-full p-2 md:p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
                     />
@@ -1010,28 +1009,23 @@ ${businessData.businessName} - All Rights Reserved
                       </div>
                     </div>
                     <div className="flex items-center gap-2 md:gap-3">
-                      <Calendar className="text-blue-500 shrink-0" size={18} />
+                      <Phone className="text-blue-500 shrink-0" size={18} />
                       <div className="min-w-0">
-                        <p className="text-xs md:text-sm text-gray-500">Established</p>
-                        <p className="text-sm md:text-base font-medium truncate">{businessData.established}</p>
+                        <p className="text-xs md:text-sm text-gray-500">Phone</p>
+                        <p className="text-sm md:text-base font-medium truncate">{businessData.contact}</p>
                       </div>
                     </div>
+
                   </div>
                   <div className="space-y-3 md:space-y-4">
                     <div className="flex items-center gap-2 md:gap-3">
                       <Mail className="text-blue-500 shrink-0" size={18} />
                       <div className="min-w-0">
                         <p className="text-xs md:text-sm text-gray-500">Email</p>
-                        <p className="text-sm md:text-base font-medium truncate">{businessData.email}</p>
+                        <p className="text-sm md:text-base font-medium truncate">{businessData.adminEmail}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <Phone className="text-blue-500 shrink-0" size={18} />
-                      <div className="min-w-0">
-                        <p className="text-xs md:text-sm text-gray-500">Phone</p>
-                        <p className="text-sm md:text-base font-medium truncate">{businessData.phone}</p>
-                      </div>
-                    </div>
+                    
                     <div className="flex items-center gap-2 md:gap-3">
                       <MapPin className="text-blue-500 shrink-0" size={18} />
                       <div className="min-w-0">
@@ -1104,7 +1098,7 @@ ${businessData.businessName} - All Rights Reserved
               </button>
             </div>
           </div>
-          
+
 
           {/* Recent Transactions */}
           <div className="bg-white rounded-xl md:rounded-2xl shadow-lg p-4 md:p-6">
@@ -1207,7 +1201,7 @@ ${businessData.businessName} - All Rights Reserved
                   </div>
                   <div>
                     <p className="text-sm text-blue-100">Email</p>
-                    <p className="font-medium">{businessData.email}</p>
+                    <p className="font-medium">{businessData.adminEmail}</p>
                   </div>
                 </div>
 
@@ -1217,7 +1211,7 @@ ${businessData.businessName} - All Rights Reserved
                   </div>
                   <div>
                     <p className="text-sm text-blue-100">Phone</p>
-                    <p className="font-medium">{businessData.phone}</p>
+                    <p className="font-medium">{businessData.contact}</p>
                   </div>
                 </div>
 
@@ -1227,7 +1221,7 @@ ${businessData.businessName} - All Rights Reserved
                   </div>
                   <div>
                     <p className="text-sm text-blue-100">Location</p>
-                    <p className="font-medium">{businessData.address.split(',')[0]}</p>
+                    <p className="font-medium">{businessData.address?.split(',')[0] || ''}</p>
                   </div>
                 </div>
               </div>
@@ -1237,16 +1231,13 @@ ${businessData.businessName} - All Rights Reserved
                   <QrCode size={24} />
                   <span className="text-sm text-blue-100">Digital Business Card</span>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-blue-100">Est. {businessData.established.split(' ')[2]}</p>
-                  <p className="font-medium">{businessData.website}</p>
-                </div>
+                
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          
+
 
           {/* Business Description */}
           <div className="bg-white rounded-xl md:rounded-2xl shadow-lg p-4 md:p-6">

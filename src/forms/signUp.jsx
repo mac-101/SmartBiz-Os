@@ -5,7 +5,7 @@ import {
 } from "firebase/auth"; // Firebase Auth imports
 
 import { useNavigate } from 'react-router-dom';
-import { ref, set, get } from "firebase/database"; // RTDB imports
+import { ref, set } from "firebase/database"; // RTDB imports
 import { auth, db } from "../../firebase.config";
 
 function BusinessSignup() {
@@ -26,8 +26,10 @@ function BusinessSignup() {
     address: '',
     city: '',
     state: '',
+    website: 'http://'+ '',
     zipCode: '',
     currency: 'NGN',
+    description: '',
     timezone: 'Africa/Lagos',
     industry: '',
     logo: null
@@ -49,9 +51,9 @@ function BusinessSignup() {
   const isStepComplete = (stepNum) => {
     switch (stepNum) {
       case 1:
-        return business.name && business.type && business.email;
+        return business.name && business.type && business.email && business.phone && business.description;
       case 2:
-        return business.address && business.city && business.state;
+        return business.address && business.city && business.country;
       case 3:
         return admin.fullName && admin.email && admin.password && admin.password === admin.confirmPassword;
       default:
@@ -88,8 +90,8 @@ function BusinessSignup() {
       return;
     }
 
-    if (admin.confirmPassword.length < 6) {
-      console.log("Password must be at least 6 characters.");
+    if (admin.password.length < 8) {
+      console.log("Password must be at least 8 characters.");
       setLoading(false);
       return;
     }
@@ -102,13 +104,23 @@ function BusinessSignup() {
         displayName: admin.fullName
       });
 
-      await set(ref(db, 'businesses/' + user.uid), {
-        businessInfo: business,
-        adminInfo: {
-          fullName: admin.fullName,
-          email: admin.email,
-          phone: admin.phone
-        },
+      // Save business data under `businessData/{uid}` with top-level fields
+      await set(ref(db, 'businessData/' + user.uid), {
+        businessName: business.name,
+        businessType: business.type,
+        businessDescription: business.description,
+        industry: business.industry,
+        address: business.address,
+        contact: business.phone || admin.phone || business.email,
+        country: business.country,
+        city: business.city,
+        state: business.state,
+        zipCode: business.zipCode,
+        currency: business.currency,
+        timezone: business.timezone,
+        ownerName: admin.fullName,
+        adminEmail: admin.email,
+        website: business.website,
         createdAt: new Date().toISOString()
       });
 
@@ -252,7 +264,7 @@ function BusinessSignup() {
                   />
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Country *
                   </label>
@@ -266,7 +278,7 @@ function BusinessSignup() {
                       <option key={country} value={country}>{country}</option>
                     ))}
                   </select>
-                </div>
+                </div> */}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -283,6 +295,16 @@ function BusinessSignup() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Business Description</label>
+                <textarea
+                  value={business.description}
+                  onChange={(e) => setBusiness({ ...business, description: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  rows="4"
+                />
               </div>
 
               {/* Business Preview */}
@@ -324,6 +346,22 @@ function BusinessSignup() {
                   />
                 </div>
 
+                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Country *
+                  </label>
+                  <select
+                    required
+                    value={business.country}
+                    onChange={(e) => setBusiness({ ...business, country: e.target.value })}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {countries.map(country => (
+                      <option key={country} value={country}>{country}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     City *
@@ -338,19 +376,7 @@ function BusinessSignup() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    State/Province *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={business.state}
-                    onChange={(e) => setBusiness({ ...business, state: e.target.value })}
-                    placeholder="e.g., Lagos State"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

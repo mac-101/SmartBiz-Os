@@ -145,9 +145,9 @@ export default function Sidebar({ active, onclick, handleLogout }) {
                         Get Assistance
                     </button>
                 </div>
-                    <div onClick={handleLogout} className="mt-8 px-4 py-2 bg-linear-to-r text-black from-red-50 to-orange-50 font-bold flex justify-center rounded-xl border border-blue-100">
-                        Log Out
-                    </div>
+                <div onClick={handleLogout} className="mt-8 px-4 cursor-pointer py-2 bg-linear-to-r text-black from-red-50 to-orange-50 font-bold flex justify-center rounded-xl border border-blue-100">
+                    Log Out
+                </div>
 
             </nav>
 

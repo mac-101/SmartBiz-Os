@@ -8,6 +8,7 @@ import ExpenseForm from "../forms/expenceForm.jsx";
 import { Outlet, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase.config";
+import { useNavigate } from "react-router-dom";
 
 export function AppLayout() {
     const location = useLocation();
@@ -16,6 +17,7 @@ export function AppLayout() {
     const [formType, setFormType] = useState("sale");
     const [click, setClick] = useState(true);
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const formOpeners = {
         openSaleForm: () => { setFormType("sale"); setShowForm(true); },
@@ -47,7 +49,9 @@ export function AppLayout() {
         try {
             setLoading(true);
             await signOut(auth);
+            navigate("/login");
             console.log("User signed out");
+
         } catch (error) {
             console.error("Error signing out:", error);
         } finally {

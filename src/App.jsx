@@ -9,6 +9,7 @@ import Sales from './pages/sales.jsx';
 import BusinessSignup from './forms/signUp.jsx';
 import BusinessProfile from './pages/profile.jsx';
 import BusinessLogin from './forms/login.jsx';
+import Setting from './pages/setting.jsx';
 
 function App() {
   return (
@@ -22,14 +23,14 @@ function App() {
         <Route path="/" element={
           <ProtectedRoute>
             <AppLayout />
-          </ProtectedRoute>
+         </ProtectedRoute>
         }>
           <Route index element={<Dashboard />} />
           <Route path="sales" element={<Sales />} />
           <Route path="expenses" element={<Expenses />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="assistant" element={<Dashboard />} />
-          <Route path="settings" element={<Dashboard />} />
+          <Route path="settings" element={<Setting />} />
           <Route path="profile" element={<BusinessProfile />} />
         </Route>
         

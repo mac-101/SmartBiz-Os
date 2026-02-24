@@ -58,14 +58,14 @@ export default function Inventory() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-linear-to-r from-blue-50 to-white p-6 rounded-2xl shadow-lg border border-blue-100">
+        <div className="border-blue-100 bg-white p-6 rounded-2xl border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-blue-600 mb-1">Total Items</p>
               <h2 className="text-3xl font-bold text-gray-800">{totalItems}</h2>
               <p className="text-xs text-gray-500 mt-2">Units in stock</p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+            <div className=" rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
@@ -73,14 +73,14 @@ export default function Inventory() {
           </div>
         </div>
 
-        <div className="bg-linear-to-r from-green-50 to-white p-6 rounded-2xl shadow-lg border border-green-100">
+        <div className="bg-white p-6 rounded-2xl border border-green-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-green-600 mb-1">Total Value</p>
               <h2 className="text-3xl font-bold text-gray-800">{totalValue.toLocaleString()}₦</h2>
               <p className="text-xs text-gray-500 mt-2">Inventory worth</p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+            <div className="rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -88,14 +88,14 @@ export default function Inventory() {
           </div>
         </div>
 
-        <div className="bg-linear-to-r from-amber-50 to-white p-6 rounded-2xl shadow-lg border border-amber-100">
+        <div className="bg-white p-6 rounded-2xl border border-amber-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-amber-600 mb-1">Low Stock</p>
               <h2 className="text-3xl font-bold text-gray-800">{lowStockItems}</h2>
               <p className="text-xs text-gray-500 mt-2">Need restocking</p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+            <div className=" rounded-full  flex items-center justify-center">
               <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
@@ -103,14 +103,14 @@ export default function Inventory() {
           </div>
         </div>
 
-        <div className="bg-linear-to-r from-red-50 to-white p-6 rounded-2xl shadow-lg border border-red-100">
+        <div className="bg-white p-6 rounded-2xl border border-red-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-red-600 mb-1">Out of Stock</p>
               <h2 className="text-3xl font-bold text-gray-800">{outOfStockItems}</h2>
               <p className="text-xs text-gray-500 mt-2">Require attention</p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+            <div className=" rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
               </svg>
@@ -120,7 +120,7 @@ export default function Inventory() {
       </div>
 
       {/* Controls */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-2xl shadow-sm p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Product Inventory</h2>
@@ -169,7 +169,7 @@ export default function Inventory() {
       </div>
 
       {/* Table Container */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -193,16 +193,7 @@ export default function Inventory() {
                   <tr key={product.id} className={`hover:bg-gray-50 transition-colors ${isOutOfStock ? 'bg-red-50' : ''}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${product.category === 'Electronics' ? 'bg-blue-100 text-blue-600' :
-                          product.category === 'Accessories' ? 'bg-green-100 text-green-600' :
-                            product.category === 'Audio' ? 'bg-purple-100 text-purple-600' :
-                              product.category === 'Gaming' ? 'bg-amber-100 text-amber-600' :
-                                'bg-gray-100 text-gray-600'
-                          }`}>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                          </svg>
-                        </div>
+                        
                         <div>
                           <div className="font-medium text-gray-900">{product.product}</div>
                           <div className="text-sm text-gray-500">{product.category}</div>
@@ -211,12 +202,7 @@ export default function Inventory() {
                     </td>
 
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${product.category === 'Electronics' ? 'bg-blue-100 text-blue-700' :
-                        product.category === 'Accessories' ? 'bg-green-100 text-green-700' :
-                          product.category === 'Audio' ? 'bg-purple-100 text-purple-700' :
-                            product.category === 'Gaming' ? 'bg-amber-100 text-amber-700' :
-                              'bg-gray-100 text-gray-700'
-                        }`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium `}>
                         {product.category}
                       </span>
                     </td>
@@ -233,17 +219,7 @@ export default function Inventory() {
                             Min: {product.reorderLevel || 10}
                           </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${isOutOfStock ? 'bg-red-500' :
-                              isLowStock ? 'bg-amber-500' :
-                                product.quantity > 50 ? 'bg-green-500' : 'bg-blue-500'
-                              }`}
-                            style={{
-                              width: `${Math.min(100, (product.quantity / (product.reorderLevel || 10) * 50))}%`
-                            }}
-                          ></div>
-                        </div>
+                        
                         {isLowStock && !isOutOfStock && (
                           <span className="text-xs text-amber-600 font-medium">⚠️ Low Stock</span>
                         )}

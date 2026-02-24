@@ -6,7 +6,7 @@ import { MinusIcon } from "lucide-react";
 export default function Expenses() {
   const [expenses, setExpenses] = useState(expense);
   const [sortOrder, setSortOrder] = useState('newest'); // 'newest', 'oldest', 'highest', 'lowest'
-  const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'today', 'week', 'month', 'year'
+  const [timeFilter, setTimeFilter] = useState('month'); // 'all', 'today', 'week', 'month', 'year'
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState('');
   const [filteredExpenses, setFilteredExpenses] = useState(expense);
@@ -118,13 +118,13 @@ export default function Expenses() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full md:w-auto">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 w-full md:w-auto">
           {/* Total Expenses Card */}
-          <div className="border border-red-500 text-black bg-white p-5 rounded-2xl shadow-lg">
+          <div className="border border-red-100 hover:border-red-500 text-black bg-white p-5 rounded-2xl ">
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="rounded-full flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
@@ -133,7 +133,7 @@ export default function Expenses() {
                   <p className="text-2xl font-bold truncate mt-1">{totalExpenses.toLocaleString()}₦</p>
                 </div>
               </div>
-              <div className="mt-auto pt-3 border-t border-red-600/20">
+              <div className="mt-auto ">
                 <p className="text-xs opacity-80 truncate">
                   {timeFilter === 'today' ? 'Today' :
                     timeFilter === 'week' ? 'This Week' :
@@ -148,11 +148,11 @@ export default function Expenses() {
 
           {/* Highest Expense Card */}
 
-          <div className="border border-orange-600 text-black bg-white p-5 rounded-2xl shadow-lg">
+          <div className="border border-orange-100 hover:border-orange-500 text-black bg-white p-5 rounded-2xl ">
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
                 </div>
@@ -161,7 +161,7 @@ export default function Expenses() {
                   <p className="text-2xl font-bold truncate mt-1">{highestExpense.toLocaleString()}₦</p>
                 </div>
               </div>
-              <div className="mt-auto pt-3 border-t border-orange-600/20">
+              <div className="mt-auto ">
                 <p className="text-xs opacity-80 truncate">
                   {sortOrder === 'highest' ? 'Sorted by Highest' : 'Single transaction'}
                 </p>
@@ -170,11 +170,11 @@ export default function Expenses() {
           </div>
 
           {/* Average Expense Card */}
-          <div className="border border-amber-600 text-black bg-white p-5 rounded-2xl shadow-lg">
+          <div className="border border-amber-100 hover:border-amber-500 text-black bg-white p-5 rounded-2xl">
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className=" rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
@@ -185,7 +185,7 @@ export default function Expenses() {
                   </p>
                 </div>
               </div>
-              <div className="mt-auto pt-3 border-t border-amber-600/20">
+              <div className="mt-auto ">
                 <p className="text-xs opacity-80 truncate">
                   Based on {filteredExpenses.length} records
                 </p>
@@ -196,7 +196,7 @@ export default function Expenses() {
       </div>
 
       {/* Filter and Sort Controls */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-2xl shadow-sm p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">Filter & Sort Expenses</h3>
@@ -306,7 +306,7 @@ export default function Expenses() {
 
 
       {/* Expense History Section */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         {/* Table Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -445,46 +445,7 @@ export default function Expenses() {
         </div>
       </div>
 
-      {/* Expense Breakdown */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-6">Expense Breakdown by Category</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {Array.from(new Set(expenses.map(e => e.category))).map(category => {
-            const categoryTotal = filteredExpenses
-              .filter(e => e.category === category)
-              .reduce((acc, e) => acc + e.amount, 0);
-            const percentage = (categoryTotal / totalExpenses * 100).toFixed(1);
-
-            return (
-              <div key={category} className="p-4 border border-gray-200 rounded-xl hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-2">
-                  <span className={`px-2 py-1 text-xs font-medium rounded ${category === 'Utilities' ? 'bg-blue-100 text-blue-800' :
-                    category === 'Salaries' ? 'bg-purple-100 text-purple-800' :
-                      category === 'Marketing' ? 'bg-pink-100 text-pink-800' :
-                        category === 'Office Supplies' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
-                    }`}>
-                    {category}
-                  </span>
-                  <span className="text-sm font-bold text-gray-900">{percentage}%</span>
-                </div>
-                <div className="text-2xl font-bold text-gray-900">{categoryTotal.toLocaleString()}₦</div>
-                <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${category === 'Utilities' ? 'bg-blue-500' :
-                      category === 'Salaries' ? 'bg-purple-500' :
-                        category === 'Marketing' ? 'bg-pink-500' :
-                          category === 'Office Supplies' ? 'bg-green-500' :
-                            'bg-gray-500'
-                      }`}
-                    style={{ width: `${percentage}%` }}
-                  ></div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      
     </div>
   );
 }

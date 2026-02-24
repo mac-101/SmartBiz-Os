@@ -200,10 +200,10 @@ export default function Sales() {
         {/* Summary Cards */}
         <div className="flex flex-wrap gap-4">
           {/* Total Revenue Card */}
-          <div className="border border-blue-600 bg-white text-black px-4 sm:px-6 py-4 rounded-2xl shadow-lg flex-1 min-w-40 sm:min-w-[210px]">
+          <div className="border border-blue-100 hover:border-blue-300 bg-white text-black px-4 sm:px-6 py-4 rounded-2xl flex-1 min-w-40 sm:min-w-[210px]">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className=" rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-blue-600 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -216,10 +216,10 @@ export default function Sales() {
           </div>
 
           {/* Items Sold Card */}
-          <div className="border border-green-600 text-black bg-white px-4 sm:px-6 py-4 rounded-2xl shadow-lg flex-1 min-w-40 sm:min-w-[180px]">
+          <div className="border border-green-100 hover:border-green-300 text-black bg-white px-4 sm:px-6 py-4 rounded-2xl flex-1 min-w-40 sm:min-w-[180px]">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -234,7 +234,7 @@ export default function Sales() {
       </div>
 
       {/* Filter and Sort Controls */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-2xl shadow-sm p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">Filter Sales</h3>
@@ -322,7 +322,7 @@ export default function Sales() {
         </div>
 
         {/* Quick Stats */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
             <div className="text-sm text-blue-700 font-medium">Filtered Results</div>
             <div className="mt-2">
@@ -353,7 +353,7 @@ export default function Sales() {
             </div>
           </div>
 
-          {/* <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
             <div className="text-sm text-purple-700 font-medium">Sorting</div>
             <div className="mt-2">
               <div className="flex justify-between items-center">
@@ -367,13 +367,13 @@ export default function Sales() {
                 </span>
               </div>
             </div>
-          </div> */}
-        </div>
+          </div>
+        </div> */}
       </div>
 
 
       {/* Sales Table Section */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         {/* Table Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -561,23 +561,7 @@ export default function Sales() {
                   <tr key={sale.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${sale.product.includes('Laptop') ? 'bg-blue-100' :
-                          sale.product.includes('Monitor') ? 'bg-green-100' :
-                            sale.product.includes('Keyboard') ? 'bg-purple-100' :
-                              sale.product.includes('Mouse') ? 'bg-amber-100' :
-                                sale.product.includes('Headphones') ? 'bg-pink-100' :
-                                  'bg-gray-100'
-                          }`}>
-                          <svg className={`w-5 h-5 ${sale.product.includes('Laptop') ? 'text-blue-600' :
-                            sale.product.includes('Monitor') ? 'text-green-600' :
-                              sale.product.includes('Keyboard') ? 'text-purple-600' :
-                                sale.product.includes('Mouse') ? 'text-amber-600' :
-                                  sale.product.includes('Headphones') ? 'text-pink-600' :
-                                    'text-gray-600'
-                            }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                          </svg>
-                        </div>
+                        
                         <div>
                           <div className="font-medium text-gray-900">{sale.product}</div>
                           <div className="text-sm text-gray-500">ID: #{sale.id.toString().padStart(3, '0')}</div>
@@ -602,12 +586,8 @@ export default function Sales() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="rounded-lg text-green-800 font-extrabold flex items-center justify-center mr-1">
-                          <Plus size={15} />
-                        </div>
-                        <div>
+                        
                           <div className="text-gray-900 font-bold text-lg">{sale.total.toLocaleString()}₦</div>
-                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -659,7 +639,7 @@ export default function Sales() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -669,7 +649,7 @@ export default function Sales() {
               </p>
               <p className="text-xs text-gray-500 mt-1">{filteredSales.length} transactions</p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full  flex items-center justify-center">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
@@ -686,7 +666,7 @@ export default function Sales() {
               </p>
               <p className="text-xs text-gray-500 mt-1">{getTimeFilterLabel()}</p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 11l7-7 7 7M5 19l7-7 7 7" />
               </svg>
@@ -701,7 +681,7 @@ export default function Sales() {
               <p className="text-2xl font-bold text-gray-900">{todaysSales}</p>
               <p className="text-xs text-gray-500 mt-1">Sales made today</p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>

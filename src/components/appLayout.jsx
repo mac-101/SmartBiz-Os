@@ -93,7 +93,7 @@ export function AppLayout() {
     };
 
     return (
-        <div className="w-full min-h-screen flex flex-col md:flex-row bg-gray-50">
+        <div className="w-full min-h-screen flex flex-col md:flex-row bg-white">
             {/* Sidebar */}
             {isSidebarVisible && (
                 <div className="fixed md:relative z-40 h-screen">

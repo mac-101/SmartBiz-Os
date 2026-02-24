@@ -183,39 +183,49 @@ export default function Dashboard() {
 				</div>
 
 				{/* Time Period Filter */}
-				<div className="flex flex-wrap gap-2">
-					{['today', 'week', 'month', 'year'].map((period) => (
-						<button
-							key={period}
-							onClick={() => setTimeFilter(period)}
-							className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${timeFilter === period
-								? period === 'today' ? 'bg-blue-600 text-white' :
-									period === 'week' ? 'bg-purple-600 text-white' :
-										period === 'month' ? 'bg-green-600 text-white' :
-											'bg-amber-600 text-white'
-								: 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
-								}`}
-						>
-							{period === 'today' ? 'Today' :
-								period === 'week' ? 'This Week' :
-									period === 'month' ? 'This Month' : 'This Year'}
-						</button>
-					))}
+				<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+
+					<div className="flex flex-wrap gap-2">
+						{['today', 'week', 'month', 'year', 'all'].map((period) => (
+							<button
+								key={period}
+								onClick={() => setTimeFilter(period)}
+								className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${timeFilter === period
+									? period === 'today'
+										? 'bg-blue-100 text-blue-700 border border-blue-200'
+										: period === 'week'
+											? 'bg-purple-100 text-purple-700 border border-purple-200'
+											: period === 'month'
+												? 'bg-green-100 text-green-700 border border-green-200'
+												: period === 'year'
+													? 'bg-amber-100 text-amber-700 border border-amber-200'
+													: 'bg-gray-100 text-gray-700 border border-gray-200'
+									: 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+									}`}
+							>
+								{period === 'today' ? 'Today' :
+									period === 'week' ? 'This Week' :
+										period === 'month' ? 'This Month' :
+											period === 'year' ? 'This Year' :
+												'All Time'}
+							</button>
+						))}
+					</div>
 				</div>
 			</div>
 
 			{/* Top Stats */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-				<div className="bg-linear-to-br bg-white p-6 rounded-2xl shadow-lg border border-blue-100 hover:shadow-xl transition-shadow duration-300">
+			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
+				<div className="bg-linear-to-br bg-white p-6 rounded-2xl  border border-blue-100 hover:border-blue-300 transition-shadow duration-300">
 					<div className="flex items-center justify-between">
 						<div className="">
 							<p className="text-sm font-medium text-blue-600">Sales</p>
-							<h2 className="text-3xl font-bold text-gray-800">{totalSales.toLocaleString()}₦</h2>
+							<h2 className="text-2xl md:text-3xl font-bold text-gray-800">{totalSales.toLocaleString()}₦</h2>
 							<p className="text-xs text-gray-500 mt-2">Total Sale's {getTimeFilterLabel()}</p>
 
 						</div>
 
-						<div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+						<div className="w-12 h-12 rounded-full flex items-center justify-center">
 							<svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
 							</svg>
@@ -223,16 +233,16 @@ export default function Dashboard() {
 					</div>
 				</div>
 
-				<div className="bg-linear-to-br bg-white p-6 rounded-2xl shadow-lg border border-red-100 hover:shadow-xl transition-shadow duration-300">
+				<div className="bg-linear-to-br bg-white p-6 rounded-2xl  border border-red-100 hover:border-red-300 transition-shadow duration-300">
 					<div className="flex items-center justify-between">
 						<div className="">
 							<p className="text-sm font-medium text-red-600">Expenses</p>
-							<h2 className="text-3xl font-bold text-gray-800">{totalExpenses.toLocaleString()}₦</h2>
+							<h2 className="text-2xl md:text-3xl font-bold text-gray-800">{totalExpenses.toLocaleString()}₦</h2>
 							<p className="text-xs text-gray-500 mt-2">Total Expense {getTimeFilterLabel()}</p>
 
 
 						</div>
-						<div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+						<div className="w-12 h-12 rounded-full flex items-center justify-center">
 
 							<svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -241,14 +251,14 @@ export default function Dashboard() {
 					</div>
 				</div>
 
-				<div className="bg-linear-to-br bg-white p-6 rounded-2xl shadow-lg border border-green-100 hover:shadow-xl transition-shadow duration-300">
+				<div className="bg-linear-to-br bg-white p-6 rounded-2xl  border border-green-100 hover:border-green-300 transition-shadow duration-300">
 					<div className="flex items-center justify-between">
 						<div>
 							<p className="text-sm font-medium text-green-600 mb-1">Inventory Items</p>
-							<h2 className="text-3xl font-bold text-gray-800">{inventoryItems}</h2>
+							<h2 className="text-2xl md:text-3xl font-bold text-gray-800">{inventoryItems}</h2>
 							<p className="text-xs text-gray-500 mt-2">Total products in stock</p>
 						</div>
-						<div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+						<div className="w-12 h-12 rounded-full flex items-center justify-center">
 							<svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
 							</svg>
@@ -256,14 +266,14 @@ export default function Dashboard() {
 					</div>
 				</div>
 
-				<div className="bg-linear-to-br bg-white p-6 rounded-2xl shadow-lg border border-amber-100 hover:shadow-xl transition-shadow duration-300">
+				<div className="bg-linear-to-br bg-white p-6 rounded-2xl border border-amber-100 hover:border-amber-300 transition-shadow duration-300">
 					<div className="flex items-center justify-between">
 						<div>
 							<p className="text-sm font-medium text-amber-600 mb-1">Low Stock Alerts</p>
-							<h2 className="text-3xl font-bold text-gray-800">{lowStockAlerts}</h2>
+							<h2 className="text-2xl md:text-3xl font-bold text-gray-800">{lowStockAlerts}</h2>
 							<p className="text-xs text-gray-500 mt-2">Items need restocking</p>
 						</div>
-						<div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+						<div className="w-12 h-12 rounded-full flex items-center justify-center">
 							<svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 							</svg>
@@ -273,10 +283,10 @@ export default function Dashboard() {
 			</div>
 
 			{/* Middle Section */}
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 				{/* Chart Placeholder with Time Filter */}
-				<div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-2 md:p-6">
-					<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+				<div className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-2 md:p-6">
+					{/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
 						<div>
 							<h3 className="text-lg font-semibold text-gray-800">Financial Overview</h3>
 							<p className="text-sm text-gray-500">
@@ -309,7 +319,7 @@ export default function Dashboard() {
 								</button>
 							))}
 						</div>
-					</div>
+					</div> */}
 
 					{/* Chart Container */}
 					<div className="relative">
@@ -348,7 +358,7 @@ export default function Dashboard() {
 
 
 				{/* Quick Summary */}
-				<div className="bg-white rounded-2xl shadow-lg p-6">
+				<div className="bg-white rounded-2xl shadow-sm p-6">
 					<h3 className="text-lg font-semibold text-gray-800 mb-6">Quick Summary</h3>
 
 					<div className="space-y-6">
@@ -439,7 +449,7 @@ export default function Dashboard() {
 						.map((sale, index) => (
 							<div key={sale.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
 								<div className="flex items-center gap-3">
-									<div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+									<div className=" rounded-full  flex items-center justify-center">
 										<svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 11l7-7 7 7M5 19l7-7 7 7" />
 										</svg>
@@ -466,7 +476,7 @@ export default function Dashboard() {
 						.map((exp, index) => (
 							<div key={exp.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
 								<div className="flex items-center gap-3">
-									<div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+									<div className=" rounded-full flex items-center justify-center">
 										<svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 11l7-7 7 7M5 19l7-7 7 7" />
 										</svg>

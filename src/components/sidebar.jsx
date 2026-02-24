@@ -17,7 +17,7 @@ const menuGroups = [
 
 export default function Sidebar({ active, onclick, handleLogout }) {
     return (
-        <div className="w-64 h-screen bg-linear-to-b from-white to-gray-50 fixed left-0 top-0 flex flex-col border-r">
+        <div className="w-64 h-screen bg-white fixed left-0 top-0 flex flex-col ">
             <div className="px-6 py-5 border-b flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
                     <Shield className="w-6 h-6 text-white" />

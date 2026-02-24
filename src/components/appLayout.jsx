@@ -5,19 +5,46 @@ import { LayoutDashboard, X } from "lucide-react";
 import SaleForm from "../forms/saleForm.jsx";
 import InventoryForm from "../forms/inventoryForm.jsx";
 import ExpenseForm from "../forms/expenceForm.jsx";
-import { Outlet, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase.config";
 import { useNavigate } from "react-router-dom";
 
+import Inventory from '../pages/inventory.jsx';
+import Expenses from '../pages/expenses.jsx';
+import Sales from '../pages/sales.jsx';
+import Setting from '../pages/setting.jsx';
+import Profile from '../pages/profile.jsx';
+import Dashboard from '../pages/dashboard.jsx';
+
 export function AppLayout() {
-    const location = useLocation();
+    const [activeTab, setActiveTab] = useState("dashboard");
     const [isSidebarVisible, setSidebarVisible] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [formType, setFormType] = useState("sale");
-    const [click, setClick] = useState(true);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    // 1. RENDER CONTENT FUNCTION
+    const renderContent = () => {
+        switch (activeTab) {
+            case "dashboard": return <Dashboard />;
+            case "sales": return <Sales />;
+            case "expenses": return <Expenses />;
+            case "inventory": return <Inventory />;
+            case "assistant": return <div className="p-4">AI Assistant Content Goes Here</div>;
+            case "profile": return <Profile />;
+            case "settings": return <Setting />;
+            default: return <div className="p-4"><Dashboard /></div>;
+        }
+    };
+
+    const handleSidebarItemClick = (tabId) => {
+        setActiveTab(tabId);
+        // On mobile, close sidebar after clicking
+        if (window.innerWidth < 1100) {
+            setSidebarVisible(false);
+        }
+    };
 
     const formOpeners = {
         openSaleForm: () => { setFormType("sale"); setShowForm(true); },
@@ -38,7 +65,6 @@ export function AppLayout() {
         const handleResize = () => {
             const isLarge = window.innerWidth >= 1100;
             setSidebarVisible(isLarge);
-            setClick(!isLarge);
         };
         handleResize();
         window.addEventListener("resize", handleResize);
@@ -50,14 +76,12 @@ export function AppLayout() {
             setLoading(true);
             await signOut(auth);
             navigate("/login");
-            console.log("User signed out");
-
         } catch (error) {
             console.error("Error signing out:", error);
         } finally {
             setLoading(false);
         }
-  };
+    };
 
     const renderForm = () => {
         const forms = {
@@ -68,30 +92,33 @@ export function AppLayout() {
         return forms[formType] || forms.sale;
     };
 
-    const sideBar = ["/signup", "/login"].includes(location.pathname);
-
     return (
-        <div className="w-full min-h-screen flex flex-col md:flex-row">
+        <div className="w-full min-h-screen flex flex-col md:flex-row bg-gray-50">
             {/* Sidebar */}
-            {!sideBar && isSidebarVisible && (
+            {isSidebarVisible && (
                 <div className="fixed md:relative z-40 h-screen">
-                    <Sidebar active={location.pathname} handleLogout={handleLogout} onclick={click && toggleSidebar} />
+                    <Sidebar 
+                        active={activeTab} 
+                        handleLogout={handleLogout} 
+                        onclick={handleSidebarItemClick} 
+                    />
                 </div>
             )}
 
             {/* Main Content */}
-            <div className={`flex-1 min-h-screen w-full transition-all duration-300 ${!sideBar && isSidebarVisible ? "md:ml-64" : ""}`}>
-                {!sideBar && (
-                    <button
-                        className={`fixed top-4 left-4 z-50 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors ${isSidebarVisible ? "ml-50" : ""}`}
-                        onClick={toggleSidebar}
-                    >
-                        <LayoutDashboard size={20} />
-                    </button>
-                )}
+            <div className={`flex-1 min-h-screen w-full transition-all duration-300 ${isSidebarVisible ? "md:ml-64" : ""}`}>
+                
+                {/* Mobile/Toggle Button */}
+                <button
+                    className={`fixed top-4 left-4 z-50 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors`}
+                    onClick={toggleSidebar}
+                >
+                    <LayoutDashboard size={20} />
+                </button>
 
                 <FloatingBtn formOpeners={formOpeners} />
 
+                {/* Form Modal */}
                 {showForm && (
                     <div className="fixed inset-0 w-full h-full backdrop-blur-md bg-black/30 flex items-center justify-center z-50 p-2 md:p-4"
                         onClick={handleBackdropClick}>
@@ -104,12 +131,10 @@ export function AppLayout() {
                     </div>
                 )}
 
-                {/* THIS IS THE KEY FIX - Proper Outlet container with your exact working structure */}
-                <div className="w-full min-h-screen">
-                    <div className={`w-full min-h-screen p-1 ${!sideBar && "md:p-6"}`}>
-                        <div className="w-full min-h-full">
-                            <Outlet />
-                        </div>
+                {/* Rendered View Area */}
+                <div className="w-full min-h-screen pt-16 md:pt-0">
+                    <div className="w-full min-h-screen p-2 md:p-6">
+                        {renderContent()}
                     </div>
                 </div>
             </div>

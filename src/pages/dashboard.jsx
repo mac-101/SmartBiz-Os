@@ -2,11 +2,23 @@ import { expense, sales, inventory } from "../components/data";
 import React, { useEffect, useState } from "react";
 import FinancialChart from "../components/chart";
 
+
+
 export default function Dashboard() {
 	const [timeFilter, setTimeFilter] = useState('today'); // 'today', 'week', 'month', 'year'
 	const [totalSales, setTotalSales] = React.useState(0);
 	const [totalExpenses, setTotalExpenses] = React.useState(0);
 	const [inventoryItems, setInventoryItems] = React.useState(inventory.length);
+
+
+
+
+
+
+
+
+
+
 	const [lowStockAlerts, setLowStockAlerts] = React.useState(
 		inventory.filter(item => item.quantity < 5).length
 	);

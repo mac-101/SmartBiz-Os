@@ -96,45 +96,49 @@ export default function SaleForm() {
     if (!user) return alert("Please log in");
     if (!validateStock()) return alert("Check product selection and stock levels!");
 
-    console.log("🚀 Starting Sale Process...");
-    const saleId = `SALE-${Date.now()}`;
-
+    console.log("🚀 Starting Individual Sale Processing...");
+    
     try {
-      // 1. Record Sale
-      const salePath = `businessData/${user.uid}/sales/${saleId}`;
-      console.log("📝 Writing Sale to:", salePath);
-
-      await set(ref(db, salePath), {
-        customer: customer || 'Walk-in Customer',
-        paymentMethod,
-        products: products.map(({ availableStock, ...rest }) => rest),
-        totalAmount: calculateTotal(),
-        date: new Date().toISOString(),
-        displayDate: getCurrentDate()
-      });
-
-      // 2. Prepare & Deduct Inventory
       const updates = {};
-      console.log("📦 Preparing inventory updates for items:", products.length);
+      const timestamp = Date.now();
+      const isoDate = new Date().toISOString();
+      const displayDate = getCurrentDate();
 
-      products.forEach((p) => {
+      // We loop through each product and create a unique Firebase entry for it
+      products.forEach((p, index) => {
         if (p.productId) {
-          // This now points to the ACTUAL folder name
-          const inventoryPath = `businessData/${user.uid}/inventory/${p.productId}/quantity`;
+          // 1. Generate a unique ID for THIS specific item record
+          const individualSaleId = `SALE-${timestamp}-${index}`;
+          const salePath = `businessData/${user.uid}/sales/${individualSaleId}`;
 
+          // 2. Add the Sale Record to our update object
+          updates[salePath] = {
+            customer: customer || 'Walk-in Customer',
+            paymentMethod,
+            productId: p.productId,
+            productName: p.productName,
+            quantity: p.quantity,
+            price: p.price,
+            total: p.total, // Individual subtotal
+            date: isoDate,
+            displayDate: displayDate
+          };
+
+          // 3. Add the Inventory Deduction to our update object
+          const inventoryPath = `businessData/${user.uid}/inventory/${p.productId}/quantity`;
           const newQty = Number(p.availableStock) - Number(p.quantity);
           updates[inventoryPath] = newQty;
 
-          console.log(`Updating folder: ${p.productId} to new quantity: ${newQty}`);
+          console.log(`Prepared: ${p.productName} (Qty: ${p.quantity})`);
         }
       });
 
-      // CRITICAL MISSING STEP: Sending the updates to Firebase
-      console.log("📤 Sending updates to Firebase:", updates);
+      // 4. EXECUTE ALL UPDATES AT ONCE (Atomic Update)
+      console.log("📤 Sending all individual records to Firebase...");
       await update(ref(db), updates);
-      console.log("✅ Firebase Update Successful!");
-
-      alert(`✅ Sale recorded successfully!`);
+      
+      console.log("✅ All items saved successfully!");
+      alert(`✅ ${products.length} item(s) recorded successfully!`);
 
       // Reset Form
       setProducts([{ productId: '', quantity: 1, price: 0, total: 0, productName: '', availableStock: 0 }]);

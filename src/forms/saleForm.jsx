@@ -1,155 +1,182 @@
-import React, { useState } from 'react';
-import { inventory } from '../components/data';
+import React, { useState, useEffect } from 'react';
+import { ref, onValue, set, update } from 'firebase/database';
+import { db, auth } from '../../firebase.config';
+import { onAuthStateChanged } from 'firebase/auth'; // Added for better auth handling
 
 export default function SaleForm() {
   const [products, setProducts] = useState([
-    { productId: '', quantity: 1, price: 0, total: 0 }
+    { productId: '', quantity: 1, price: 0, total: 0, productName: '', availableStock: 0 }
   ]);
+  const [inventoryList, setInventoryList] = useState([]);
   const [customer, setCustomer] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [loading, setLoading] = useState(true);
 
-  // Format date
+  // 1. Better Auth & Fetch Logic
+  useEffect(() => {
+    // This ensures we wait for the user to be logged in before fetching
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const inventoryRef = ref(db, `businessData/${user.uid}/inventory`);
+        const unsubscribeData = onValue(inventoryRef, (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            const list = Object.keys(data).map(key => ({
+              ...data[key],
+              firebaseKey: key // This is the actual folder name (e.g. "-NqJ8...")
+            }));
+            setInventoryList(list);
+          }
+          setLoading(false);
+        });
+        return () => unsubscribeData();
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, []);
+
   const getCurrentDate = () => {
     const date = new Date();
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const day = days[date.getDay()];
-    return `${day} ${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    return `${days[date.getDay()]} ${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
   };
 
-  // Add new product row
   const addProductRow = () => {
-    setProducts([...products, { productId: '', quantity: 1, price: 0, total: 0 }]);
+    setProducts([...products, { productId: '', quantity: 1, price: 0, total: 0, productName: '', availableStock: 0 }]);
   };
 
-  // Remove product row
   const removeProductRow = (index) => {
     if (products.length > 1) {
+      setProducts(products.filter((_, i) => i !== index));
+    }
+  };
+
+  // FIXED: Improved selection logic
+  const handleProductChange = (index, selectedFirebaseKey) => {
+    const item = inventoryList.find(i => i.firebaseKey === selectedFirebaseKey);
+
+    if (item) {
       const newProducts = [...products];
-      newProducts.splice(index, 1);
+      newProducts[index] = {
+        ...newProducts[index],
+        productId: item.firebaseKey, // We use the folder name here
+        productName: item.product || item.productName,
+        price: Number(item.price),
+        availableStock: Number(item.quantity)
+      };
       setProducts(newProducts);
     }
   };
 
-  // Handle product selection
-  const handleProductChange = (index, productId) => {
+  const handleQuantityChange = (index, qty) => {
     const newProducts = [...products];
-    const selectedProduct = inventory.find(item => item.id === parseInt(productId));
-
-    if (selectedProduct) {
-      newProducts[index] = {
-        ...newProducts[index],
-        productId,
-        price: selectedProduct.price,
-        total: selectedProduct.price * newProducts[index].quantity,
-        productName: selectedProduct.product,
-        availableStock: selectedProduct.quantity
-      };
-    } else {
-      newProducts[index] = {
-        ...newProducts[index],
-        productId,
-        price: 0,
-        total: 0,
-        productName: '',
-        availableStock: 0
-      };
-    }
-
+    const val = Math.max(0, parseInt(qty) || 0); // Prevent negative numbers
+    newProducts[index].quantity = val;
+    newProducts[index].total = newProducts[index].price * val;
     setProducts(newProducts);
   };
 
-  // Handle quantity change
-  const handleQuantityChange = (index, quantity) => {
-    const newProducts = [...products];
-    const qty = parseInt(quantity) || 0;
-    newProducts[index].quantity = qty;
-    newProducts[index].total = newProducts[index].price * qty;
-    setProducts(newProducts);
-  };
+  const calculateTotal = () => products.reduce((sum, item) => sum + item.total, 0);
 
-  // Calculate total sale
-  const calculateTotal = () => {
-    return products.reduce((sum, item) => sum + item.total, 0);
-  };
-
-  // Check if any product exceeds available stock
   const validateStock = () => {
-    return products.every(product => {
-      if (!product.productId || product.quantity <= 0) return true;
-      const inventoryItem = inventory.find(item => item.id === parseInt(product.productId));
-      return inventoryItem && product.quantity <= inventoryItem.quantity;
-    });
+    // Ensure all rows have a product, qty > 0, and don't exceed stock
+    return products.length > 0 && products.every(p =>
+      p.productId !== '' &&
+      p.quantity > 0 &&
+      p.quantity <= p.availableStock
+    );
   };
 
-  // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const user = auth.currentUser;
+    if (!user) return alert("Please log in");
+    if (!validateStock()) return alert("Check product selection and stock levels!");
 
-    if (!validateStock()) {
-      alert('Some products exceed available stock! Please check quantities.');
-      return;
+    console.log("🚀 Starting Sale Process...");
+    const saleId = `SALE-${Date.now()}`;
+
+    try {
+      // 1. Record Sale
+      const salePath = `businessData/${user.uid}/sales/${saleId}`;
+      console.log("📝 Writing Sale to:", salePath);
+
+      await set(ref(db, salePath), {
+        customer: customer || 'Walk-in Customer',
+        paymentMethod,
+        products: products.map(({ availableStock, ...rest }) => rest),
+        totalAmount: calculateTotal(),
+        date: new Date().toISOString(),
+        displayDate: getCurrentDate()
+      });
+
+      // 2. Prepare & Deduct Inventory
+      const updates = {};
+      console.log("📦 Preparing inventory updates for items:", products.length);
+
+      products.forEach((p) => {
+        if (p.productId) {
+          // This now points to the ACTUAL folder name
+          const inventoryPath = `businessData/${user.uid}/inventory/${p.productId}/quantity`;
+
+          const newQty = Number(p.availableStock) - Number(p.quantity);
+          updates[inventoryPath] = newQty;
+
+          console.log(`Updating folder: ${p.productId} to new quantity: ${newQty}`);
+        }
+      });
+
+      // CRITICAL MISSING STEP: Sending the updates to Firebase
+      console.log("📤 Sending updates to Firebase:", updates);
+      await update(ref(db), updates);
+      console.log("✅ Firebase Update Successful!");
+
+      alert(`✅ Sale recorded successfully!`);
+
+      // Reset Form
+      setProducts([{ productId: '', quantity: 1, price: 0, total: 0, productName: '', availableStock: 0 }]);
+      setCustomer('');
+
+    } catch (err) {
+      console.error("❌ ERROR during sale:", err);
+      alert("Error saving sale: " + err.message);
     }
-
-    const saleData = {
-      id: Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      displayDate: getCurrentDate(),
-      customer,
-      paymentMethod,
-      products: products.filter(p => p.productId && p.quantity > 0).map(p => ({
-        productId: p.productId,
-        productName: p.productName,
-        quantity: p.quantity,
-        price: p.price,
-        total: p.total
-      })),
-      totalAmount: calculateTotal(),
-    };
-
-    console.log('Sale Data:', saleData);
-    alert(`✅ Sale recorded! Total: ₦${calculateTotal().toLocaleString()}`);
-
-    // Reset form
-    setProducts([{ productId: '', quantity: 1, price: 0, total: 0 }]);
-    setCustomer('');
   };
+
+  if (loading) return <div className="p-10 text-center text-gray-500">Loading Inventory...</div>;
 
   return (
     <div className='max-w-4xl mx-auto p-4 md:p-6 bg-white rounded-xl '>
-      {/* Header */}
       <div className='flex justify-between items-center mb-6'>
         <div>
           <h2 className='text-2xl font-bold text-gray-800'>New Sale</h2>
           <p className='text-gray-600 text-sm'>Date: {getCurrentDate()}</p>
         </div>
-        
       </div>
 
       <form onSubmit={handleSubmit} className='space-y-6'>
-        {/* Customer Info */}
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-          <div>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
-              Customer Name (Optional)
-            </label>
+        {/* Customer & Payment */}
+        <div className='grid grid-cols-3 md:grid-cols-2 gap-6'>
+          <div className='col-span-2 md:col-span-1'>
+            <label className='block  text-sm font-medium text-gray-700 mb-2'>Customer Name</label>
             <input
               type="text"
               value={customer}
               onChange={(e) => setCustomer(e.target.value)}
               placeholder='Walk-in customer'
-              className='w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm'
+              className='w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm'
             />
           </div>
 
-          {/* Payment Method */}
-          <div>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
-              Payment Method *
-            </label>
+          <div className='col-span-1 md:col-span-1'>
+            <label className='block text-sm font-medium text-gray-700 mb-2'>Payment Method</label>
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className='w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm'
+              className='w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm'
             >
               <option value="cash">💵 Cash</option>
               <option value="card">💳 Card</option>
@@ -159,108 +186,74 @@ export default function SaleForm() {
           </div>
         </div>
 
-        {/* Product Selection */}
+        {/* Product Items */}
         <div className='space-y-4'>
-          <div className='flex justify-between items-center'>
-            <h3 className='text-lg font-semibold text-gray-700'>Products</h3>
-            <button
-              type="button"
-              onClick={addProductRow}
-              className='px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center gap-1'
-            >
-              <span>+ Add Product</span>
+          <div className='flex justify-between items-center border-b pb-2'>
+            <h3 className='text-lg font-semibold text-gray-700'>Items</h3>
+            <button type="button" onClick={addProductRow} className='text-blue-600 font-bold text-sm hover:underline'>
+              + Add Item
             </button>
           </div>
 
           {products.map((product, index) => {
-            const inventoryItem = inventory.find(item => item.id === parseInt(product.productId));
-            const maxQuantity = inventoryItem ? inventoryItem.quantity : 0;
-            const isOutOfStock = product.quantity > maxQuantity;
+            const isOutOfStock = product.productId && product.quantity > product.availableStock;
 
             return (
-              <div key={index} className='p-3 border border-gray-200 rounded-lg bg-gray-50'>
-                <div className='flex justify-between items-center mb-2'>
-                  <span className='font-medium text-gray-700 text-sm'>Item #{index + 1}</span>
-                  {products.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeProductRow(index)}
-                      className='px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors text-xs'
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
+              <div key={index} className='p-4 border border-gray-200 rounded-xl bg-gray-50 relative'>
+                {products.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeProductRow(index)}
+                    className='absolute top-2 right-3 text-gray-400 hover:text-red-500 text-lg'
+                  >
+                    ×
+                  </button>
+                )}
 
-                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3'>
-                  {/* Product Selection */}
+                <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
+                  {/* Dropdown */}
                   <div>
-                    <label className='block text-xs font-medium text-gray-600 mb-1'>
-                      Product *
-                    </label>
+                    <label className='block text-[10px] uppercase font-bold text-gray-400 mb-1'>Product</label>
                     <select
                       value={product.productId}
                       onChange={(e) => handleProductChange(index, e.target.value)}
-                      className='w-full p-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm'
+                      className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
                     >
                       <option value="">Select product</option>
-                      {inventory.map(item => (
-                        <option 
-                          key={item.id} 
-                          value={item.id}
-                          disabled={item.quantity <= 0}
-                        >
-                          {item.product} (Stock: {item.quantity})
+                      {inventoryList.map((item) => (
+                        <option key={item.firebaseKey} value={item.firebaseKey}>
+                          {item.product}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Quantity */}
+                  {/* Qty */}
                   <div>
-                    <label className='block text-xs font-medium text-gray-600 mb-1'>
-                      Quantity *
-                    </label>
-                    <div className='relative'>
-                      <input
-                        type="number"
-                        min="1"
-                        max={maxQuantity}
-                        value={product.quantity}
-                        onChange={(e) => handleQuantityChange(index, e.target.value)}
-                        className={`w-full p-2 border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${
-                          isOutOfStock ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                        }`}
-                      />
-                      {maxQuantity > 0 && (
-                        <span className='absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500'>
-                          /{maxQuantity}
-                        </span>
-                      )}
-                    </div>
-                    {isOutOfStock && (
-                      <p className='text-xs text-red-600 mt-1'>Exceeds available stock!</p>
+                    <label className='block text-[10px] uppercase font-bold text-gray-400 mb-1'>Qty</label>
+                    <input
+                      type="number"
+                      value={product.quantity}
+                      onChange={(e) => handleQuantityChange(index, e.target.value)}
+                      className={`w-full p-2 border rounded-lg text-sm ${isOutOfStock ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+                    />
+                    {product.productId && (
+                      <p className={`text-[10px] mt-1 ${isOutOfStock ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
+                        {isOutOfStock ? 'Insufficient Stock!' : `Stock: ${product.availableStock}`}
+                      </p>
                     )}
                   </div>
 
-                  {/* Unit Price */}
+                  {/* Price */}
                   <div>
-                    <label className='block text-xs font-medium text-gray-600 mb-1'>
-                      Unit Price
-                    </label>
-                    <div className='p-2 bg-gray-100 rounded-lg text-sm'>
-                      <span className='font-medium'>₦{product.price.toLocaleString()}</span>
-                    </div>
+                    <label className='block text-[10px] uppercase font-bold text-gray-400 mb-1'>Unit Price</label>
+                    <div className='p-2 text-sm font-semibold'>₦{product.price.toLocaleString()}</div>
                   </div>
 
-                  {/* Total */}
+                  {/* Subtotal */}
                   <div>
-                    <label className='block text-xs font-medium text-gray-600 mb-1'>
-                      Total
-                    </label>
-                    <div className='p-2 bg-blue-50 rounded-lg'>
-                      <span className='font-bold text-blue-700 text-sm'>₦{product.total.toLocaleString()}</span>
-                    </div>
+                    <label className='block text-[10px] uppercase font-bold text-gray-400 mb-1'>Subtotal</label>
+                    <div className='p-2 text-blue-700 font-bold text-sm'>₦{product.total.toLocaleString()}</div>
                   </div>
                 </div>
               </div>
@@ -268,35 +261,18 @@ export default function SaleForm() {
           })}
         </div>
 
-        {/* Summary & Total */}
-        <div className='space-y-4'>
-          <div className='p-4 bg-linear-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200'>
-            <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
-              <div>
-                <h4 className='font-semibold text-gray-800'>Sale Summary</h4>
-                <p className='text-sm text-gray-600'>
-                  {products.filter(p => p.productId).length} product{products.filter(p => p.productId).length !== 1 ? 's' : ''} selected
-                </p>
-              </div>
-              <div className='text-right'>
-                <p className='text-sm text-gray-600'>Total Amount</p>
-                <p className='text-2xl md:text-3xl font-bold text-blue-700'>
-                  ₦{calculateTotal().toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          
+        {/* Grand Total */}
+        <div className='p-6 bg-gray-900 rounded-2xl text-white flex justify-between items-center'>
+          <span className='text-gray-400 uppercase tracking-widest text-xs font-bold'>Total Payable</span>
+          <span className='text-3xl font-bold'>₦{calculateTotal().toLocaleString()}</span>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
-          disabled={products.every(p => !p.productId || p.quantity === 0) || !validateStock()}
-          className='w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm'
+          disabled={!validateStock()}
+          className='w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-100'
         >
-          {validateStock() ? 'Complete Sale' : '⚠️ Check Stock Levels'}
+          {validateStock() ? 'Complete Sale' : 'Please check items & stock'}
         </button>
       </form>
     </div>

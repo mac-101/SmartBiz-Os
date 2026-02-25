@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   createUserWithEmailAndPassword,
   updateProfile,
@@ -12,6 +13,7 @@ function BusinessSignup() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState([]);
+  const [error, setError] = useState("");
   const isValidEmail = (email) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const [loading, setLoading] = useState(false);
@@ -24,15 +26,8 @@ function BusinessSignup() {
     phone: '',
     country: 'Nigeria',
     address: '',
-    city: '',
     state: '',
     website: 'http://'+ '',
-    zipCode: '',
-    currency: 'NGN',
-    description: '',
-    timezone: 'Africa/Lagos',
-    industry: '',
-    logo: null
   });
 
   const [admin, setAdmin] = useState({
@@ -40,20 +35,18 @@ function BusinessSignup() {
     email: '',
     password: '',
     confirmPassword: '',
-    phone: ''
   });
 
   const businessTypes = ['Retail', 'Services', 'Restaurant', 'E-commerce', 'Manufacturing', 'Healthcare', 'Education', 'Other'];
   const countries = ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'United States', 'United Kingdom'];
-  const industries = ['Technology', 'Retail', 'Food & Beverage', 'Healthcare', 'Education', 'Finance', 'Real Estate', 'Transportation'];
 
   // Check if current step is complete
   const isStepComplete = (stepNum) => {
     switch (stepNum) {
       case 1:
-        return business.name && business.type && business.email && business.phone && business.description;
+        return business.name && business.type && business.email && business.phone ;
       case 2:
-        return business.address && business.city && business.country;
+        return business.address && business.state && business.country;
       case 3:
         return admin.fullName && admin.email && admin.password && admin.password === admin.confirmPassword;
       default:
@@ -79,84 +72,74 @@ function BusinessSignup() {
   };
 
   // Handle final submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError(""); // Recommended: Clear previous errors
 
-    setLoading(true);
+  // 1. Validation Logic
+  if (!isValidEmail(admin.email)) {
+    setError("Please enter a valid email.");
+    setLoading(false);
+    return { success: false, error: "Invalid email" };
+  }
 
-    if (!isValidEmail(admin.email)) {
-      console.log("Please enter a valid email.");
-      setLoading(false);
-      return;
-    }
+  if (admin.password.length < 8) {
+    setError("Password must be at least 8 characters.");
+    setLoading(true); // Keep loading state consistent
+    setLoading(false);
+    return { success: false, error: "Password too short" };
+  }
 
-    if (admin.password.length < 8) {
-      console.log("Password must be at least 8 characters.");
-      setLoading(false);
-      return;
-    }
-    try {
+  // Check if passwords match
+  if (admin.password !== admin.confirmPassword) {
+    setError("Passwords do not match.");
+    setLoading(false);
+    return { success: false, error: "Password mismatch" };
+  }
 
-      const createUser = await createUserWithEmailAndPassword(auth, admin.email, admin.confirmPassword)
-      const user = createUser.user;
+  try {
+    // 2. Auth Creation (Fixed: Using admin.password)
+    const userCredential = await createUserWithEmailAndPassword(auth, admin.email, admin.password);
+    const user = userCredential.user;
 
-      await updateProfile(user, {
-        displayName: admin.fullName
-      });
+    // 3. Update Profile
+    await updateProfile(user, {
+      displayName: admin.fullName
+    });
 
-      // Save business data under `businessData/{uid}` with top-level fields
-      await set(ref(db, 'businessData/' + user.uid), {
-        businessName: business.name,
-        businessType: business.type,
-        businessDescription: business.description,
-        industry: business.industry,
-        address: business.address,
-        contact: business.phone || admin.phone || business.email,
-        country: business.country,
-        city: business.city,
-        state: business.state,
-        zipCode: business.zipCode,
-        currency: business.currency,
-        timezone: business.timezone,
-        ownerName: admin.fullName,
-        adminEmail: admin.email,
-        website: business.website,
-        createdAt: new Date().toISOString()
-      });
+    // 4. Save to Database
+    const businessPath = `businessData/${user.uid}/businessInfo`;
+    await set(ref(db, businessPath), {
+      businessName: business.name,
+      businessType: business.type,
+      address: business.address,
+      contact: business.phone || admin.phone || business.email,
+      country: business.country,
+      state: business.state,
+      ownerName: admin.fullName,
+      adminEmail: admin.email,
+      website: business.website,
+      createdAt: new Date().toISOString()
+    });
 
-      console.log("Business account created successfully!");
-      setBusiness({
-        name: '',
-        type: '',
-        email: '',
-        phone: '',
-        country: 'Nigeria',
-        address: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        currency: 'NGN',
-        timezone: 'Africa/Lagos',
-        industry: '',
-        logo: null
-      });
-      setAdmin({
-        fullName: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        phone: ''
-      });
+    // 5. Reset States
+    setBusiness({ name: '', type: '', email: '', phone: '', country: 'Nigeria', address: '', state: '' });
+    setAdmin({ fullName: '', email: '', password: '', confirmPassword: '', phone: '' });
 
-      navigate('/');
+    console.log("Business account created successfully!");
+    navigate('/dashboard');
 
-    } catch (error) {
-      console.error("Error creating business account:", error);
-    } finally {
-      setLoading(false);
-    }
+    return { success: true, user: user }; // Successful return
 
-  };
+  } catch (error) {
+    console.error("Error creating business account:", error);
+    setError(error.message); // Show Firebase error to user
+    return { success: false, error: error.message };
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-4 md:p-8">
@@ -264,48 +247,48 @@ function BusinessSignup() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Country *
-                  </label>
-                  <select
-                    required
-                    value={business.country}
-                    onChange={(e) => setBusiness({ ...business, country: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {countries.map(country => (
-                      <option key={country} value={country}>{country}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Industry
-                  </label>
-                  <select
-                    value={business.industry}
-                    onChange={(e) => setBusiness({ ...business, industry: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select Industry</option>
-                    {industries.map(industry => (
-                      <option key={industry} value={industry}>{industry}</option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Business Description</label>
-                <textarea
-                  value={business.description}
-                  onChange={(e) => setBusiness({ ...business, description: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  rows="4"
-                />
-              </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+              
 
               {/* Business Preview */}
               <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
@@ -318,7 +301,7 @@ function BusinessSignup() {
                   </div>
                   <div>
                     <p className="text-lg font-bold text-gray-900">{business.name || 'Your Business Name'}</p>
-                    <p className="text-gray-600">{business.type ? `${business.type.charAt(0).toUpperCase() + business.type.slice(1)} • ${business.country}` : 'Select business type'}</p>
+                    <p className="text-gray-600">{business.type ? `${business.type.charAt(0).toUpperCase() + business.type.slice(1)} ` : 'Select business type'}</p>
                   </div>
                 </div>
               </div>
@@ -332,19 +315,7 @@ function BusinessSignup() {
               <p className="text-gray-600 mb-6">Where is your business located?</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Business Address *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={business.address}
-                    onChange={(e) => setBusiness({ ...business, address: e.target.value })}
-                    placeholder="123 Business Street"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                
 
                  <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -364,51 +335,33 @@ function BusinessSignup() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    City *
+                    state *
                   </label>
                   <input
                     type="text"
                     required
-                    value={business.city}
-                    onChange={(e) => setBusiness({ ...business, city: e.target.value })}
+                    value={business.state}
+                    onChange={(e) => setBusiness({ ...business, state: e.target.value })}
                     placeholder="e.g., Lagos"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
-                
-
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    ZIP/Postal Code *
+                    Business Address *
                   </label>
                   <input
                     type="text"
                     required
-                    value={business.zipCode}
-                    onChange={(e) => setBusiness({ ...business, zipCode: e.target.value })}
-                    placeholder="100001"
+                    value={business.address}
+                    onChange={(e) => setBusiness({ ...business, address: e.target.value })}
+                    placeholder="123 Business Street"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Currency
-                  </label>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="font-medium">{business.currency === 'NGN' ? '₦ Nigerian Naira' : business.currency}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Time Zone
-                  </label>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="font-medium">{business.timezone}</span>
-                  </div>
-                </div>
+              
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Business Website
@@ -430,7 +383,7 @@ function BusinessSignup() {
                 <div className="space-y-2">
                   <p className="font-medium">{business.address || '123 Business Street'}</p>
                   <p className="text-gray-600">
-                    {business.city || 'City'}, {business.state || 'State'} {business.zipCode || 'ZIP'}
+                    {business.state || 'state' }
                   </p>
                   <p className="text-gray-600">{business.country}</p>
                 </div>
@@ -505,18 +458,7 @@ function BusinessSignup() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    value={admin.phone}
-                    onChange={(e) => setAdmin({ ...admin, phone: e.target.value })}
-                    placeholder="+234 801 234 5678"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                
               </div>
 
               {/* Terms & Conditions */}

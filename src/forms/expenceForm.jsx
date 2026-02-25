@@ -1,23 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { ref, set, push } from 'firebase/database';
+import { db, auth } from '../../firebase.config'; // Adjust path based on your file structure
+import { onAuthStateChanged } from 'firebase/auth';
 
 function ExpenseForm() {
   const [expenses, setExpenses] = useState([
     { id: Date.now(), category: '', description: '', amount: 0, paymentMethod: 'cash' }
   ]);
-  
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [generalNotes, setGeneralNotes] = useState('');
+  const [user, setUser] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories = ['Utilities', 'Salaries', 'Marketing', 'Office Supplies', 'Rent', 'Software', 'Travel', 'Training', 'Maintenance', 'Other'];
-  const paymentMethods = ['Cash', 'Bank Transfer', 'Card', 'Cheque', 'Mobile Money'];
+
+  // Check Auth State
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const addExpense = () => {
-    setExpenses([...expenses, { 
-      id: Date.now() + expenses.length, 
-      category: '', 
-      description: '', 
-      amount: 0, 
-      paymentMethod: 'cash' 
+    setExpenses([...expenses, {
+      id: Date.now() + expenses.length,
+      category: '',
+      description: '',
+      amount: 0,
+      paymentMethod: 'cash'
     }]);
   };
 
@@ -28,7 +39,7 @@ function ExpenseForm() {
   };
 
   const updateExpense = (id, field, value) => {
-    setExpenses(expenses.map(exp => 
+    setExpenses(expenses.map(exp =>
       exp.id === id ? { ...exp, [field]: value } : exp
     ));
   };
@@ -37,36 +48,59 @@ function ExpenseForm() {
     return expenses.reduce((total, exp) => total + (parseFloat(exp.amount) || 0), 0);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const expenseData = {
-      id: Date.now(),
-      date: date,
-      expenses: expenses.filter(exp => exp.category && exp.description && exp.amount > 0),
-      generalNotes,
-      totalAmount: calculateTotal(),
-      status: 'Paid'
-    };
-    
-    console.log('New Expenses:', expenseData);
-    alert(`Recorded ${expenses.length} expense(s) totaling ₦${calculateTotal().toLocaleString()}!`);
-    
-    // Reset form
-    setExpenses([{ id: Date.now(), category: '', description: '', amount: 0, paymentMethod: 'cash' }]);
-    setDate(new Date().toISOString().split('T')[0]);
-    setGeneralNotes('');
+    if (!user) return alert("Please log in to record expenses.");
+
+    // Filter out empty rows
+    const validExpenses = expenses.filter(exp => exp.category && exp.amount > 0);
+    if (validExpenses.length === 0) return alert("Please add at least one valid expense.");
+
+    setIsSubmitting(true);
+
+    try {
+      // Create a unique key for this expense bundle
+      const expenseRef = ref(db, `businessData/${user.uid}/expenses`);
+      const newExpenseBatchRef = push(expenseRef);
+
+      const expenseData = {
+        date: date,
+        items: validExpenses,
+        generalNotes,
+        totalAmount: calculateTotal(),
+        recordedAt: new Date().toISOString(),
+        status: 'Paid'
+      };
+
+      await set(newExpenseBatchRef, expenseData);
+
+      alert(`✅ Recorded ${validExpenses.length} expense(s) totaling ₦${calculateTotal().toLocaleString()}!`);
+
+      // Reset form
+      setExpenses([{ id: Date.now(), category: '', description: '', amount: 0, paymentMethod: 'cash' }]);
+      setGeneralNotes('');
+      setDate(new Date().toISOString().split('T')[0]);
+
+    } catch (err) {
+      console.error("Error saving expenses:", err);
+      alert("Error: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className='max-w-4xl mx-auto p-4 md:p-6 lg:p-8 bg-white rounded-xl '>
-      <h2 className='text-2xl lg:text-3xl font-bold text-gray-800 mb-6'>Record Expenses</h2>
-      
+    <div className='max-w-4xl mx-auto p-4 md:p-6 lg:p-8 bg-white rounded-xl shadow-sm border border-gray-100'>
+      <div className='mb-6'>
+        <h2 className='text-2xl lg:text-3xl font-bold text-gray-800'>Record Expenses</h2>
+        <p className='text-gray-500 text-sm'>Log business costs and overheads</p>
+      </div>
+
       <form onSubmit={handleSubmit} className='space-y-6'>
-        {/* Date */}
-        <div className='w-full md:w-1/2'>
-          <label className='block text-sm font-medium text-gray-700 mb-2'>
-            Date *
+        {/* Date Row */}
+        <div className='w-full md:w-1/3'>
+          <label className='block text-xs uppercase tracking-wider font-bold text-gray-400 mb-2'>
+            Transaction Date
           </label>
           <input
             type="date"
@@ -74,85 +108,72 @@ function ExpenseForm() {
             value={date}
             onChange={(e) => setDate(e.target.value)}
             max={new Date().toISOString().split('T')[0]}
-            className='w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+            className='w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none'
           />
         </div>
 
-        {/* Expense Cards */}
+        {/* Expenses List */}
         <div className='space-y-4'>
-          <div className='flex justify-between items-center'>
-            <h3 className='text-lg font-semibold text-gray-700'>Expenses</h3>
+          <div className='flex justify-between items-center border-b pb-2'>
+            <h3 className='text-lg font-semibold text-gray-700'>Line Items</h3>
             <button
               type="button"
               onClick={addExpense}
-              className='px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2 text-sm'
+              className='text-blue-600 font-bold text-sm hover:underline'
             >
-              <span>+ Add Expense</span>
+              + Add Row
             </button>
           </div>
 
           {expenses.map((expense, index) => (
-            <div key={expense.id} className='p-4 border border-gray-200 rounded-lg bg-gray-50'>
-              <div className='flex justify-between items-center mb-3'>
-                <span className='font-medium text-gray-700'>Expense #{index + 1}</span>
-                {expenses.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeExpense(expense.id)}
-                    className='px-3 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors text-sm'
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
+            <div key={expense.id} className='p-4 border border-gray-200 rounded-xl bg-gray-50 relative'>
+              {expenses.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeExpense(expense.id)}
+                  className='absolute top-2 right-3 text-gray-400 hover:text-red-500 text-lg'
+                >
+                  ×
+                </button>
+              )}
 
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
-                {/* Category */}
-                <div>
-                  <label className='block text-xs font-medium text-gray-600 mb-1'>
-                    Category
-                  </label>
-                  <select
-                    required
-                    value={expense.category}
-                    onChange={(e) => updateExpense(expense.id, 'category', e.target.value)}
-                    className='w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
-                  >
-                    <option value="">Select</option>
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <div className='grid grid-cols-2 gap-4'>
+                  <div>
+                    <label className='block text-[10px] uppercase font-bold text-gray-400 mb-1'>Category</label>
+                    <select
+                      required
+                      value={expense.category}
+                      onChange={(e) => updateExpense(expense.id, 'category', e.target.value)}
+                      className='w-full p-2 text-sm border border-gray-300 rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-500'
+                    >
+                      <option value="">Select</option>
+                      {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className='block text-[10px] uppercase font-bold text-gray-400 mb-1'>Amount (₦)</label>
+                    <input
+                      type="number"
+                      required
+                      min="0.01"
+                      step="0.01"
+                      value={expense.amount}
+                      onChange={(e) => updateExpense(expense.id, 'amount', e.target.value)}
+                      className='w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500'
+                    />
+                  </div>
                 </div>
 
-                {/* Description */}
-                <div className='lg:col-span-2'>
-                  <label className='block text-xs font-medium text-gray-600 mb-1'>
-                    Description
-                  </label>
+                <div className=''>
+                  <label className='block text-[10px] uppercase font-bold text-gray-400 mb-1'>Description</label>
                   <input
                     type="text"
-                    required
                     value={expense.description}
                     onChange={(e) => updateExpense(expense.id, 'description', e.target.value)}
-                    placeholder='What was this expense for?'
-                    className='w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
-                  />
-                </div>
-
-                {/* Amount */}
-                <div>
-                  <label className='block text-xs font-medium text-gray-600 mb-1'>
-                    Amount (₦)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="0.01"
-                    value={expense.amount}
-                    onChange={(e) => updateExpense(expense.id, 'amount', parseFloat(e.target.value) || 0)}
-                    className='w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
+                    placeholder='e.target Electricity bill'
+                    className='w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500'
                   />
                 </div>
               </div>
@@ -160,81 +181,30 @@ function ExpenseForm() {
           ))}
         </div>
 
-        {/* General Notes */}
+        {/* Notes */}
         <div>
-          <label className='block text-sm font-medium text-gray-700 mb-2'>
-            General Notes (Optional)
-          </label>
+          <label className='block text-xs uppercase font-bold text-gray-400 mb-2'>General Notes</label>
           <textarea
             value={generalNotes}
             onChange={(e) => setGeneralNotes(e.target.value)}
             rows="2"
-            placeholder='Any general notes about these expenses...'
-            className='w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+            className='w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm'
           />
         </div>
 
-        {/* Summary */}
-        <div className='p-4 bg-linear-to-r from-red-50 to-red-100 rounded-lg border border-red-200'>
-          <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
-            <div>
-              <h3 className='font-semibold text-gray-800'>Expense Summary</h3>
-              <p className='text-sm text-gray-600'>
-                {date} • {expenses.length} expense{expenses.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-            <div className='text-right'>
-              <p className='text-sm text-gray-600'>Total Amount</p>
-              <p className='text-2xl lg:text-3xl font-bold text-red-700'>
-                ₦{calculateTotal().toLocaleString()}
-              </p>
-            </div>
-          </div>
-          
-          {/* Category Breakdown */}
-          {expenses.some(exp => exp.category) && (
-            <div className='mt-4 pt-4 border-t border-red-200'>
-              <p className='text-sm font-medium text-gray-700 mb-2'>Category Breakdown:</p>
-              <div className='flex flex-wrap gap-2'>
-                {Array.from(new Set(expenses.map(exp => exp.category).filter(Boolean))).map(cat => {
-                  const categoryTotal = expenses
-                    .filter(exp => exp.category === cat)
-                    .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
-                  
-                  return (
-                    <div key={cat} className='flex items-center gap-1 px-3 py-1 bg-white rounded-full border border-gray-200'>
-                      <div className='w-2 h-2 rounded-full bg-red-500'></div>
-                      <span className='text-xs text-gray-700'>{cat}:</span>
-                      <span className='text-xs font-bold text-red-600'>₦{categoryTotal.toLocaleString()}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+        {/* Grand Total Display */}
+        <div className='p-6 bg-red-50 rounded-2xl border border-red-100 flex justify-between items-center'>
+          <span className='text-red-800 font-bold uppercase tracking-widest text-xs'>Total Outflow</span>
+          <span className='text-3xl font-bold text-red-700'>₦{calculateTotal().toLocaleString()}</span>
         </div>
 
-        {/* Submit Buttons */}
-        <div className='flex flex-col sm:flex-row gap-4'>
-          <button
-            type="button"
-            onClick={() => {
-              setExpenses([{ id: Date.now(), category: '', description: '', amount: 0, paymentMethod: 'cash' }]);
-              setDate(new Date().toISOString().split('T')[0]);
-              setGeneralNotes('');
-            }}
-            className='flex-1 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm'
-          >
-            Clear All
-          </button>
-          <button
-            type="submit"
-            disabled={!expenses.some(exp => exp.category && exp.description && exp.amount > 0)}
-            className='flex-1 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm'
-          >
-            Record {expenses.length} Expense{expenses.length !== 1 ? 's' : ''}
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={isSubmitting || !expenses.some(exp => exp.category && exp.amount > 0)}
+          className='w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-all disabled:bg-gray-400 disabled:cursor-not-allowed'
+        >
+          {isSubmitting ? 'Recording...' : `Record Expenses`}
+        </button>
       </form>
     </div>
   );

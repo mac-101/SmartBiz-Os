@@ -1,111 +1,108 @@
-import React, { useState, useEffect } from "react";
-import { expense } from "../components/data";
-import { MinusIcon } from "lucide-react";
-
+import React, { useState, useEffect, useMemo } from "react";
+import { ref, onValue, remove } from "firebase/database";
+import { db, auth } from "../../firebase.config";
+import { onAuthStateChanged } from 'firebase/auth';
+import { MinusIcon, Trash2 } from "lucide-react";
 
 export default function Expenses() {
-  const [expenses, setExpenses] = useState(expense);
-  const [sortOrder, setSortOrder] = useState('newest'); // 'newest', 'oldest', 'highest', 'lowest'
-  const [timeFilter, setTimeFilter] = useState('month'); // 'all', 'today', 'week', 'month', 'year'
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  
+  const [sortOrder, setSortOrder] = useState('newest'); 
+  const [timeFilter, setTimeFilter] = useState('month'); 
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState('');
-  const [filteredExpenses, setFilteredExpenses] = useState(expense);
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
 
-  // Get current date in YYYY-MM-DD format
-  const getCurrentDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
+  // 1. Auth Listener
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (!currentUser) setLoading(false);
+    });
+    return () => unsubscribeAuth();
+  }, []);
 
-  // Get date range for different time filters
-  const getDateRange = (filter) => {
-    const today = new Date();
+  // 2. Fetch Expenses from Firebase
+  useEffect(() => {
+    if (!user) return;
+    const expenseRef = ref(db, `businessData/${user.uid}/expenses`);
+    
+    const unsubscribeExpenses = onValue(expenseRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const list = Object.keys(data).map(key => ({
+          id: key,
+          ...data[key]
+        }));
+        setExpenses(list);
+      } else {
+        setExpenses([]);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribeExpenses();
+  }, [user]);
 
-    switch (filter) {
-      case 'today':
-        return getCurrentDate();
-      case 'week':
-        const weekAgo = new Date(today);
-        weekAgo.setDate(today.getDate() - 7);
-        return {
-          start: weekAgo.toISOString().split('T')[0],
-          end: getCurrentDate()
-        };
-      case 'month':
-        const monthAgo = new Date(today);
-        monthAgo.setMonth(today.getMonth() - 1);
-        return {
-          start: monthAgo.toISOString().split('T')[0],
-          end: getCurrentDate()
-        };
-      case 'year':
-        const yearAgo = new Date(today);
-        yearAgo.setFullYear(today.getFullYear() - 1);
-        return {
-          start: yearAgo.toISOString().split('T')[0],
-          end: getCurrentDate()
-        };
-      default:
-        return null;
+  // Handle Deletion
+  const handleDelete = async (id) => {
+    if (window.confirm("Delete this expense record?")) {
+      try {
+        await remove(ref(db, `businessData/${user.uid}/expenses/${id}`));
+      } catch (err) {
+        alert("Failed to delete: " + err.message);
+      }
     }
   };
 
-  // Filter and sort expenses
+  const getCurrentDate = () => new Date().toISOString().split('T')[0];
+
+  // 3. Filtering & Sorting Logic
   useEffect(() => {
     let result = [...expenses];
 
-    // Apply time filter
     if (timeFilter !== 'all') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
       if (timeFilter === 'today') {
-        const today = getCurrentDate();
-        result = result.filter(exp => exp.date === today);
+        result = result.filter(exp => exp.date === getCurrentDate());
       } else if (timeFilter === 'custom' && selectedDate) {
         result = result.filter(exp => exp.date === selectedDate);
-      } else if (['week', 'month', 'year'].includes(timeFilter)) {
-        const range = getDateRange(timeFilter);
-        result = result.filter(exp => exp.date >= range.start && exp.date <= range.end);
+      } else {
+        const rangeDate = new Date();
+        if (timeFilter === 'week') rangeDate.setDate(today.getDate() - 7);
+        if (timeFilter === 'month') rangeDate.setMonth(today.getMonth() - 1);
+        if (timeFilter === 'year') rangeDate.setFullYear(today.getFullYear() - 1);
+        
+        const compareStr = rangeDate.toISOString().split('T')[0];
+        result = result.filter(exp => exp.date >= compareStr);
       }
     }
 
-    // Apply category filter
     if (categoryFilter !== 'all') {
       result = result.filter(exp => exp.category === categoryFilter);
     }
 
-    // Apply sorting
     switch (sortOrder) {
-      case 'newest':
-        result.sort((a, b) => new Date(b.date) - new Date(a.date));
-        break;
-      case 'oldest':
-        result.sort((a, b) => new Date(a.date) - new Date(b.date));
-        break;
-      case 'highest':
-        result.sort((a, b) => b.amount - a.amount);
-        break;
-      case 'lowest':
-        result.sort((a, b) => a.amount - b.amount);
-        break;
-      default:
-        break;
+      case 'newest': result.sort((a, b) => new Date(b.date) - new Date(a.date)); break;
+      case 'oldest': result.sort((a, b) => new Date(a.date) - new Date(b.date)); break;
+      case 'highest': result.sort((a, b) => b.amount - a.amount); break;
+      case 'lowest': result.sort((a, b) => a.amount - b.amount); break;
+      default: break;
     }
 
     setFilteredExpenses(result);
   }, [expenses, sortOrder, timeFilter, categoryFilter, selectedDate]);
 
+  const totalExpenses = filteredExpenses.reduce((acc, exp) => acc + Number(exp.amount), 0);
+  const highestExpense = filteredExpenses.length > 0 ? Math.max(...filteredExpenses.map(e => e.amount)) : 0;
+  const averageExpense = filteredExpenses.length > 0 ? totalExpenses / filteredExpenses.length : 0;
 
-
-  // Calculate totals based on filtered expenses
-  const totalExpenses = filteredExpenses.reduce((acc, exp) => acc + exp.amount, 0);
-  const highestExpense = filteredExpenses.length > 0
-    ? Math.max(...filteredExpenses.map(e => e.amount))
-    : 0;
-  const averageExpense = filteredExpenses.length > 0
-    ? totalExpenses / filteredExpenses.length
-    : 0;
-
-  // Get unique categories
   const categories = ['all', ...new Set(expenses.map(e => e.category))];
+
+  if (loading) return <div className="p-10 text-center font-bold text-red-600">Loading Expenses...</div>;
 
   return (
     <div className="p-2 md:p-6 min-h-screen bg-linear-to-br rounded-2xl from-gray-50 to-gray-100 space-y-8">
@@ -119,124 +116,18 @@ export default function Expenses() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 w-full md:w-auto">
-          {/* Total Expenses Card */}
-          <div className="border border-red-100 hover:border-red-500 text-black bg-white p-5 rounded-2xl ">
-            <div className="flex flex-col h-full">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="rounded-full flex items-center justify-center shrink-0">
-                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium opacity-90 truncate">Total Expenses</p>
-                  <p className="text-2xl font-bold truncate mt-1">{totalExpenses.toLocaleString()}₦</p>
-                </div>
-              </div>
-              <div className="mt-auto ">
-                <p className="text-xs opacity-80 truncate">
-                  {timeFilter === 'today' ? 'Today' :
-                    timeFilter === 'week' ? 'This Week' :
-                      timeFilter === 'month' ? 'This Month' :
-                        timeFilter === 'year' ? 'This Year' :
-                          categoryFilter !== 'all' ? categoryFilter :
-                            'All Time'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Highest Expense Card */}
-
-          <div className="border border-orange-100 hover:border-orange-500 text-black bg-white p-5 rounded-2xl ">
-            <div className="flex flex-col h-full">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium opacity-90 truncate">Highest Expense</p>
-                  <p className="text-2xl font-bold truncate mt-1">{highestExpense.toLocaleString()}₦</p>
-                </div>
-              </div>
-              <div className="mt-auto ">
-                <p className="text-xs opacity-80 truncate">
-                  {sortOrder === 'highest' ? 'Sorted by Highest' : 'Single transaction'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Average Expense Card */}
-          <div className="border border-amber-100 hover:border-amber-500 text-black bg-white p-5 rounded-2xl">
-            <div className="flex flex-col h-full">
-              <div className="flex items-center gap-3 mb-3">
-                <div className=" rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                  <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium opacity-90 truncate">Average Expense</p>
-                  <p className="text-2xl font-bold truncate mt-1">
-                    {averageExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })}₦
-                  </p>
-                </div>
-              </div>
-              <div className="mt-auto ">
-                <p className="text-xs opacity-80 truncate">
-                  Based on {filteredExpenses.length} records
-                </p>
-              </div>
-            </div>
-          </div>
+          <StatCard label="Total Expenses" value={totalExpenses} color="red" timeFilter={timeFilter} />
+          <StatCard label="Highest Expense" value={highestExpense} color="orange" subtext="Single transaction" />
+          <StatCard label="Average" value={averageExpense} color="amber" subtext={`Across ${filteredExpenses.length} items`} />
         </div>
       </div>
 
       {/* Filter and Sort Controls */}
       <div className="bg-white rounded-2xl shadow-sm p-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Filter & Sort Expenses</h3>
-            <p className="text-gray-600 text-sm">Customize your view based on time, category, and order</p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            {/* Reset Filters Button */}
-            <button
-              onClick={() => {
-                setTimeFilter('all');
-                setCategoryFilter('all');
-                setSortOrder('newest');
-                setSelectedDate('');
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium"
-            >
-              Reset Filters
-            </button>
-
-            {/* Export Button */}
-            <button className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors text-sm font-medium flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Export Report
-            </button>
-          </div>
-        </div>
-
-        {/* Filter Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-          {/* Time Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Time Period</label>
-            <select
-              value={timeFilter}
-              onChange={(e) => setTimeFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-            >
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Time Period</label>
+            <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
               <option value="all">All Time</option>
               <option value="today">Today</option>
               <option value="week">Last 7 Days</option>
@@ -244,208 +135,107 @@ export default function Expenses() {
               <option value="year">Last Year</option>
               <option value="custom">Custom Date</option>
             </select>
-
-            {/* Custom Date Picker */}
             {timeFilter === 'custom' && (
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              />
+              <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg mt-2" />
             )}
           </div>
 
-          {/* Category Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-            >
-              {categories.map(category => (
-                <option key={category} value={category}>
-                  {category === 'all' ? 'All Categories' : category}
-                </option>
-              ))}
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Category</label>
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+              {categories.map(cat => <option key={cat} value={cat}>{cat === 'all' ? 'All Categories' : cat}</option>)}
             </select>
           </div>
 
-          {/* Sort Order */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-            >
-              <option value="newest">Date: Newest First</option>
-              <option value="oldest">Date: Oldest First</option>
-              <option value="highest">Amount: Highest First</option>
-              <option value="lowest">Amount: Lowest First</option>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Sort Order</label>
+            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="highest">Highest Amount</option>
+              <option value="lowest">Lowest Amount</option>
             </select>
           </div>
 
-          {/* Quick Stats */}
-          <div className="bg-gray-50 p-4 rounded-lg border">
-            <div className="text-sm text-gray-600">Filtered Results</div>
-            <div className="mt-2">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700">Records:</span>
-                <span className="font-bold text-gray-900">{filteredExpenses.length}</span>
-              </div>
-              <div className="flex justify-between items-center mt-1">
-                <span className="text-gray-700">Total:</span>
-                <span className="font-bold text-red-600">{totalExpenses.toLocaleString()}₦</span>
-              </div>
-            </div>
+          <div className="flex items-end gap-2">
+            <button onClick={() => { setTimeFilter('all'); setCategoryFilter('all'); setSortOrder('newest'); }} className="w-full py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50">Reset</button>
           </div>
         </div>
       </div>
 
-
-      {/* Expense History Section */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        {/* Table Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Expense History</h2>
-              <p className="text-gray-600 text-sm mt-1">
-                {filteredExpenses.length} expense records • Sorted by {sortOrder}
-                {timeFilter !== 'all' && ` • ${timeFilter}`}
-                {categoryFilter !== 'all' && ` • ${categoryFilter}`}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Table Container */}
+      {/* Expense History Table */}
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  <button
-                    onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
-                    className="flex items-center gap-2 hover:text-gray-900"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    ID {sortOrder === 'newest' || sortOrder === 'oldest' ? '↓' : ''}
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Description
-                </th>
-                
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  <button
-                    onClick={() => setSortOrder(sortOrder === 'highest' ? 'lowest' : 'highest')}
-                    className="flex items-center gap-2 hover:text-gray-900"
-                  >
-                    Amount {sortOrder === 'highest' || sortOrder === 'lowest' ? '↓' : ''}
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Status
-                </th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase">Item ID</th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase">Category</th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase">Description</th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase">Amount</th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase">Date</th>
+                <th className="px-6 py-4 text-right text-[10px] font-bold text-gray-400 uppercase">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredExpenses.length > 0 ? (
                 filteredExpenses.map((expense) => (
                   <tr key={expense.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">#{expense.id.toString().padStart(3, '0')}</div>
+                    <td className="px-6 py-4 text-xs font-mono text-gray-400">
+                      {expense.id.slice(-6).toUpperCase()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${expense.category === 'Utilities' ? 'bg-blue-50 text-blue-700' :
-                        expense.category === 'Salaries' ? 'bg-purple-50 text-purple-700' :
-                          expense.category === 'Marketing' ? 'bg-pink-50 text-pink-700' :
-                            expense.category === 'Office Supplies' ? 'bg-green-50 text-green-700' :
-                              'bg-gray-50 text-gray-700'
-                        }`}>
+                    <td className="px-6 py-4">
+                      <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-bold uppercase">
                         {expense.category}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {expense.description || "—"}
+                    </td>
                     <td className="px-6 py-4">
-                      <div className="max-w-xs">
-                        <div className="text-gray-900 font-medium truncate">{expense.description}</div>
+                      <div className="flex items-center text-red-600 font-bold">
+                        <MinusIcon size={14} className="mr-1" />
+                        {Number(expense.amount).toLocaleString()}₦
                       </div>
                     </td>
-                    
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="rounded-lg text-red-700 font-extrabold flex items-center justify-center mr-1">
-                          <MinusIcon size={15} />
-                        </div>
-                        <div>
-                          <div className="text-gray-900 font-bold">{expense.amount.toLocaleString()}₦</div>
-                        </div>
-                      </div>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {expense.date}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <span className="text-gray-900">{expense.date}</span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(expense.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700">
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Paid
-                      </span>
+                    <td className="px-6 py-4 text-right">
+                      <button onClick={() => handleDelete(expense.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                        <Trash2 size={18} />
+                      </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center justify-center">
-                      <svg className="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <p className="text-gray-500 text-lg font-medium">No expenses found</p>
-                      <p className="text-gray-400 mt-1">Try changing your filters or add new expenses</p>
-                    </div>
-                  </td>
+                  <td colSpan="6" className="px-6 py-20 text-center text-gray-400">No records found matching filters.</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-
-        {/* Table Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-gray-600">
-              Showing {filteredExpenses.length} of {expenses.length} expense records
-              {timeFilter !== 'all' && ` • Filtered by ${timeFilter}`}
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="text-sm text-gray-600">
-                Filtered Total: <span className="font-bold text-red-600">{totalExpenses.toLocaleString()}₦</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
+    </div>
+  );
+}
 
-      
+// Helper component for the Stats Cards to keep UI clean
+function StatCard({ label, value, color, subtext, timeFilter }) {
+  const colors = {
+    red: "border-red-100 text-red-600",
+    orange: "border-orange-100 text-orange-600",
+    amber: "border-amber-100 text-amber-600"
+  };
+  
+  return (
+    <div className={`bg-white border p-5 rounded-2xl shadow-sm ${colors[color]}`}>
+      <p className="text-[10px] uppercase font-black opacity-60 tracking-tighter">{label}</p>
+      <p className="text-2xl font-black text-gray-900 mt-1">{Number(value).toLocaleString()}₦</p>
+      <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase italic">
+        {subtext || timeFilter || 'All Time'}
+      </p>
     </div>
   );
 }

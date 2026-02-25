@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ref, set, push } from 'firebase/database';
-import { db, auth } from '../../firebase.config'; // Adjust path based on your file structure
+import { ref, update } from 'firebase/database'; // Swapped set/push for update
+import { db, auth } from '../../firebase.config';
 import { onAuthStateChanged } from 'firebase/auth';
 
 function ExpenseForm() {
@@ -14,7 +14,6 @@ function ExpenseForm() {
 
   const categories = ['Utilities', 'Salaries', 'Marketing', 'Office Supplies', 'Rent', 'Software', 'Travel', 'Training', 'Maintenance', 'Other'];
 
-  // Check Auth State
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -48,33 +47,42 @@ function ExpenseForm() {
     return expenses.reduce((total, exp) => total + (parseFloat(exp.amount) || 0), 0);
   };
 
+  // --- UPDATED SUBMIT LOGIC ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user) return alert("Please log in to record expenses.");
 
-    // Filter out empty rows
     const validExpenses = expenses.filter(exp => exp.category && exp.amount > 0);
     if (validExpenses.length === 0) return alert("Please add at least one valid expense.");
 
     setIsSubmitting(true);
 
     try {
-      // Create a unique key for this expense bundle
-      const expenseRef = ref(db, `businessData/${user.uid}/expenses`);
-      const newExpenseBatchRef = push(expenseRef);
+      const updates = {};
+      const timestamp = Date.now();
+      const recordedAt = new Date().toISOString();
 
-      const expenseData = {
-        date: date,
-        items: validExpenses,
-        generalNotes,
-        totalAmount: calculateTotal(),
-        recordedAt: new Date().toISOString(),
-        status: 'Paid'
-      };
+      validExpenses.forEach((exp, index) => {
+        // Create a unique ID for every single line item
+        const individualId = `EXP-${timestamp}-${index}`;
+        const path = `businessData/${user.uid}/expenses/${individualId}`;
 
-      await set(newExpenseBatchRef, expenseData);
+        updates[path] = {
+          date: date, // The custom transaction date
+          category: exp.category,
+          description: exp.description || '',
+          amount: Number(exp.amount),
+          paymentMethod: exp.paymentMethod || 'cash',
+          generalNotes: generalNotes || '',
+          recordedAt: recordedAt,
+          status: 'Paid'
+        };
+      });
 
-      alert(`✅ Recorded ${validExpenses.length} expense(s) totaling ₦${calculateTotal().toLocaleString()}!`);
+      // Atomic update saves all individual items at once
+      await update(ref(db), updates);
+
+      alert(`✅ Successfully recorded ${validExpenses.length} individual expense entries!`);
 
       // Reset form
       setExpenses([{ id: Date.now(), category: '', description: '', amount: 0, paymentMethod: 'cash' }]);
@@ -97,7 +105,6 @@ function ExpenseForm() {
       </div>
 
       <form onSubmit={handleSubmit} className='space-y-6'>
-        {/* Date Row */}
         <div className='w-full md:w-1/3'>
           <label className='block text-xs uppercase tracking-wider font-bold text-gray-400 mb-2'>
             Transaction Date
@@ -112,7 +119,6 @@ function ExpenseForm() {
           />
         </div>
 
-        {/* Expenses List */}
         <div className='space-y-4'>
           <div className='flex justify-between items-center border-b pb-2'>
             <h3 className='text-lg font-semibold text-gray-700'>Line Items</h3>
@@ -125,7 +131,7 @@ function ExpenseForm() {
             </button>
           </div>
 
-          {expenses.map((expense, index) => (
+          {expenses.map((expense) => (
             <div key={expense.id} className='p-4 border border-gray-200 rounded-xl bg-gray-50 relative'>
               {expenses.length > 1 && (
                 <button
@@ -172,7 +178,7 @@ function ExpenseForm() {
                     type="text"
                     value={expense.description}
                     onChange={(e) => updateExpense(expense.id, 'description', e.target.value)}
-                    placeholder='e.target Electricity bill'
+                    placeholder='e.g. Electricity bill'
                     className='w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500'
                   />
                 </div>
@@ -181,7 +187,6 @@ function ExpenseForm() {
           ))}
         </div>
 
-        {/* Notes */}
         <div>
           <label className='block text-xs uppercase font-bold text-gray-400 mb-2'>General Notes</label>
           <textarea
@@ -192,7 +197,6 @@ function ExpenseForm() {
           />
         </div>
 
-        {/* Grand Total Display */}
         <div className='p-6 bg-red-50 rounded-2xl border border-red-100 flex justify-between items-center'>
           <span className='text-red-800 font-bold uppercase tracking-widest text-xs'>Total Outflow</span>
           <span className='text-3xl font-bold text-red-700'>₦{calculateTotal().toLocaleString()}</span>

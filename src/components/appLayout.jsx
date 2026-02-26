@@ -1,7 +1,7 @@
 import Sidebar from "./sidebar.jsx";
 import FloatingBtn from "./floatingBtn.jsx";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import SaleForm from "../forms/saleForm.jsx";
 import InventoryForm from "../forms/inventoryForm.jsx";
 import ExpenseForm from "../forms/expenceForm.jsx";
@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import Inventory from '../pages/inventory.jsx';
 import Expenses from '../pages/expenses.jsx';
 import Sales from '../pages/sales.jsx';
-import Setting from '../pages/setting.jsx';
+// import Setting from '../pages/setting.jsx';
 import Profile from '../pages/profile.jsx';
 import Dashboard from '../pages/dashboard.jsx';
 
@@ -33,7 +33,7 @@ export function AppLayout() {
             case "inventory": return <Inventory />;
             case "assistant": return <div className="p-4">AI Assistant Content Goes Here</div>;
             case "profile": return <Profile />;
-            case "settings": return <Setting />;
+            // case "settings": return <Setting />;
             default: return <div className="p-4"><Dashboard /></div>;
         }
     };
@@ -108,13 +108,26 @@ export function AppLayout() {
             {/* Main Content */}
             <div className={`flex-1 min-h-screen w-full transition-all duration-300 ${isSidebarVisible ? "md:ml-64" : ""}`}>
                 
-                {/* Mobile/Toggle Button */}
-                <button
-                    className={`fixed top-4 left-4 z-50 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors`}
-                    onClick={toggleSidebar}
-                >
-                    <LayoutDashboard size={20} />
-                </button>
+                <header className="sticky top-0 z-30 w-full bg-white px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button
+                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                            onClick={toggleSidebar}
+                        >
+                            <Menu size={24} />
+                        </button>
+                        <h2 className="text-lg font-bold text-gray-800 capitalize">
+                            {activeTab}
+                        </h2>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                        <div className="text-right block">
+                            <p className="text-xs font-bold text-gray-900 leading-none">SmartBiz OS</p>
+                            <p className="text-[10px] text-blue-600 font-medium tracking-tight">Enterprise</p>
+                        </div>
+                    </div>
+                </header>
 
                 <FloatingBtn formOpeners={formOpeners} />
 
@@ -132,8 +145,8 @@ export function AppLayout() {
                 )}
 
                 {/* Rendered View Area */}
-                <div className="w-full min-h-screen pt-16 md:pt-0">
-                    <div className="w-full min-h-screen p-2 md:p-6">
+                <div className="w-full min-h-screen ">
+                    <div className="w-full min-h-screen ">
                         {renderContent()}
                     </div>
                 </div>

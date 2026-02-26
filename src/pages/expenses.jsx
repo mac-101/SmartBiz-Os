@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { ref, onValue, remove } from "firebase/database";
 import { db, auth } from "../../firebase.config";
 import { onAuthStateChanged } from 'firebase/auth';
-import { MinusIcon, Trash2 } from "lucide-react";
+import { MinusIcon, Trash2, Download, RotateCcw } from "lucide-react";
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState([]);
@@ -24,11 +24,10 @@ export default function Expenses() {
     return () => unsubscribeAuth();
   }, []);
 
-  // 2. Fetch Expenses from Firebase
+  // 2. Fetch Expenses
   useEffect(() => {
     if (!user) return;
     const expenseRef = ref(db, `businessData/${user.uid}/expenses`);
-    
     const unsubscribeExpenses = onValue(expenseRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -56,35 +55,53 @@ export default function Expenses() {
     }
   };
 
+  // Export to CSV
+  const handleExport = () => {
+    if (filteredExpenses.length === 0) return alert("No data to export");
+    const headers = ["Date", "Category", "Description", "Amount (₦)"];
+    const rows = filteredExpenses.map(exp => [
+      exp.date,
+      exp.category,
+      exp.description || "N/A",
+      exp.amount
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + [headers, ...rows].map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Expenses_${timeFilter}_${new Date().toLocaleDateString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getCurrentDate = () => new Date().toISOString().split('T')[0];
 
   // 3. Filtering & Sorting Logic
   useEffect(() => {
     let result = [...expenses];
-
     if (timeFilter !== 'all') {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
       if (timeFilter === 'today') {
         result = result.filter(exp => exp.date === getCurrentDate());
       } else if (timeFilter === 'custom' && selectedDate) {
         result = result.filter(exp => exp.date === selectedDate);
-      } else {
+      } else if (timeFilter !== 'custom') {
         const rangeDate = new Date();
         if (timeFilter === 'week') rangeDate.setDate(today.getDate() - 7);
         if (timeFilter === 'month') rangeDate.setMonth(today.getMonth() - 1);
         if (timeFilter === 'year') rangeDate.setFullYear(today.getFullYear() - 1);
-        
         const compareStr = rangeDate.toISOString().split('T')[0];
         result = result.filter(exp => exp.date >= compareStr);
       }
     }
-
     if (categoryFilter !== 'all') {
       result = result.filter(exp => exp.category === categoryFilter);
     }
-
     switch (sortOrder) {
       case 'newest': result.sort((a, b) => new Date(b.date) - new Date(a.date)); break;
       case 'oldest': result.sort((a, b) => new Date(a.date) - new Date(b.date)); break;
@@ -92,64 +109,77 @@ export default function Expenses() {
       case 'lowest': result.sort((a, b) => a.amount - b.amount); break;
       default: break;
     }
-
     setFilteredExpenses(result);
   }, [expenses, sortOrder, timeFilter, categoryFilter, selectedDate]);
 
   const totalExpenses = filteredExpenses.reduce((acc, exp) => acc + Number(exp.amount), 0);
   const highestExpense = filteredExpenses.length > 0 ? Math.max(...filteredExpenses.map(e => e.amount)) : 0;
   const averageExpense = filteredExpenses.length > 0 ? totalExpenses / filteredExpenses.length : 0;
-
   const categories = ['all', ...new Set(expenses.map(e => e.category))];
 
-  if (loading) return <div className="p-10 text-center font-bold text-red-600">Loading Expenses...</div>;
+  if (loading) return <ExpensesSkeleton />;
 
   return (
-    <div className="p-2 md:p-6 min-h-screen bg-linear-to-br rounded-2xl from-gray-50 to-gray-100 space-y-8">
-
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="p-4 md:p-6 min-h-screen bg-gray-50 rounded-2xl space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Expenses Management</h1>
-          <p className="text-gray-600 mt-2">Track and manage all business expenditures</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Expenses Management</h1>
+          <p className="text-sm text-gray-500 mt-1">Track and manage all business expenditures</p>
         </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 w-full md:w-auto">
-          <StatCard label="Total Expenses" value={totalExpenses} color="red" timeFilter={timeFilter} />
-          <StatCard label="Highest Expense" value={highestExpense} color="orange" subtext="Single transaction" />
-          <StatCard label="Average" value={averageExpense} color="amber" subtext={`Across ${filteredExpenses.length} items`} />
-        </div>
+        <button 
+          onClick={handleExport}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+        >
+          <Download size={16} />
+          Export CSV
+        </button>
       </div>
 
-      {/* Filter and Sort Controls */}
-      <div className="bg-white rounded-2xl shadow-sm p-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Time Period</label>
-            <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard label="Total Expenses" value={totalExpenses} color="red" subtext={timeFilter === 'all' ? 'Lifetime' : timeFilter} />
+        <StatCard label="Highest Expense" value={highestExpense} color="orange" subtext="Peak Transaction" />
+        <StatCard label="Average" value={averageExpense} color="amber" subtext={`Per ${filteredExpenses.length} entries`} />
+      </div>
+
+      {/* Controls */}
+      <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Time Period</label>
+            <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-100 rounded-lg px-3 outline-none text-sm focus:ring-2 focus:ring-red-500">
               <option value="all">All Time</option>
               <option value="today">Today</option>
               <option value="week">Last 7 Days</option>
               <option value="month">Last 30 Days</option>
               <option value="year">Last Year</option>
-              <option value="custom">Custom Date</option>
+              <option value="custom">Pick Specific Date</option>
             </select>
-            {timeFilter === 'custom' && (
-              <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg mt-2" />
-            )}
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Category</label>
-            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+          {timeFilter === 'custom' && (
+            <div className="space-y-1 animate-in fade-in slide-in-from-top-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Select Date</label>
+              <input 
+                type="date" 
+                value={selectedDate} 
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full h-10 bg-gray-50 border border-gray-100 rounded-lg px-3 outline-none text-sm focus:ring-2 focus:ring-red-500"
+              />
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Category</label>
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-100 rounded-lg px-3 outline-none text-sm focus:ring-2 focus:ring-red-500">
               {categories.map(cat => <option key={cat} value={cat}>{cat === 'all' ? 'All Categories' : cat}</option>)}
             </select>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Sort Order</label>
-            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Sort By</label>
+            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-100 rounded-lg px-3 outline-none text-sm focus:ring-2 focus:ring-red-500">
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
               <option value="highest">Highest Amount</option>
@@ -157,61 +187,57 @@ export default function Expenses() {
             </select>
           </div>
 
-          <div className="flex items-end gap-2">
-            <button onClick={() => { setTimeFilter('all'); setCategoryFilter('all'); setSortOrder('newest'); }} className="w-full py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50">Reset</button>
+          <div className="lg:col-span-1 flex items-end">
+            <button 
+              onClick={() => { setTimeFilter('month'); setCategoryFilter('all'); setSortOrder('newest'); setSelectedDate(''); }} 
+              className="flex items-center justify-center gap-2 w-full h-10 border border-gray-200 rounded-lg text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+            >
+              <RotateCcw size={14} />
+              Reset Filters
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Expense History Table */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+      {/* Table */}
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-100">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase">Item ID</th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase">Category</th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase">Description</th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase">Amount</th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase">Date</th>
-                <th className="px-6 py-4 text-right text-[10px] font-bold text-gray-400 uppercase">Action</th>
+                <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Ref ID</th>
+                <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Category</th>
+                <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Description</th>
+                <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-4"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-50">
               {filteredExpenses.length > 0 ? (
                 filteredExpenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-xs font-mono text-gray-400">
-                      {expense.id.slice(-6).toUpperCase()}
-                    </td>
+                  <tr key={expense.id} className="hover:bg-red-50/20 transition-colors">
+                    <td className="px-6 py-4 text-xs font-mono text-gray-400">#{expense.id.slice(-6).toUpperCase()}</td>
                     <td className="px-6 py-4">
-                      <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-bold uppercase">
-                        {expense.category}
-                      </span>
+                      <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-tight">{expense.category}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {expense.description || "—"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center text-red-600 font-bold">
-                        <MinusIcon size={14} className="mr-1" />
-                        {Number(expense.amount).toLocaleString()}₦
+                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">{expense.description || "—"}</td>
+                    <td className="px-6 py-4 font-bold text-red-600 text-sm">
+                      <div className="flex items-center">
+                        <MinusIcon size={12} className="mr-1 stroke-[3px]" />
+                        ₦{Number(expense.amount).toLocaleString()}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {expense.date}
-                    </td>
+                    <td className="px-6 py-4 text-xs text-gray-500 font-medium">{expense.date}</td>
                     <td className="px-6 py-4 text-right">
-                      <button onClick={() => handleDelete(expense.id)} className="text-gray-300 hover:text-red-500 transition-colors">
-                        <Trash2 size={18} />
+                      <button onClick={() => handleDelete(expense.id)} className="text-gray-300 hover:text-red-500 transition-colors p-2">
+                        <Trash2 size={16} />
                       </button>
                     </td>
                   </tr>
                 ))
               ) : (
-                <tr>
-                  <td colSpan="6" className="px-6 py-20 text-center text-gray-400">No records found matching filters.</td>
-                </tr>
+                <tr><td colSpan="6" className="px-6 py-20 text-center text-gray-400 text-sm font-medium">No expense records found.</td></tr>
               )}
             </tbody>
           </table>
@@ -221,21 +247,31 @@ export default function Expenses() {
   );
 }
 
-// Helper component for the Stats Cards to keep UI clean
-function StatCard({ label, value, color, subtext, timeFilter }) {
+function StatCard({ label, value, color, subtext }) {
   const colors = {
-    red: "border-red-100 text-red-600",
-    orange: "border-orange-100 text-orange-600",
-    amber: "border-amber-100 text-amber-600"
+    red: "border-red-50 text-red-600 bg-red-50/30",
+    orange: "border-orange-50 text-orange-600 bg-orange-50/30",
+    amber: "border-amber-50 text-amber-600 bg-amber-50/30"
   };
-  
   return (
-    <div className={`bg-white border p-5 rounded-2xl shadow-sm ${colors[color]}`}>
-      <p className="text-[10px] uppercase font-black opacity-60 tracking-tighter">{label}</p>
-      <p className="text-2xl font-black text-gray-900 mt-1">{Number(value).toLocaleString()}₦</p>
-      <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase italic">
-        {subtext || timeFilter || 'All Time'}
-      </p>
+    <div className={`border p-5 rounded-xl shadow-sm ${colors[color]}`}>
+      <p className="text-[11px] uppercase font-bold opacity-70 tracking-wider">{label}</p>
+      <p className="text-2xl font-bold text-gray-800 mt-1">₦{Number(value).toLocaleString()}</p>
+      <p className="text-[10px] text-gray-400 font-medium mt-1 uppercase italic">{subtext}</p>
+    </div>
+  );
+}
+
+function ExpensesSkeleton() {
+  return (
+    <div className="p-4 md:p-6 min-h-screen bg-gray-50 rounded-2xl space-y-6 animate-pulse">
+      <div className="h-8 w-64 bg-gray-200 rounded-lg"></div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-28 bg-white rounded-xl border border-gray-100"></div>
+        ))}
+      </div>
+      <div className="h-64 bg-white rounded-xl border border-gray-100"></div>
     </div>
   );
 }

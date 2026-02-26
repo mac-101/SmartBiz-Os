@@ -5,7 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth'; // Added for better auth han
 
 export default function SaleForm() {
   const [products, setProducts] = useState([
-    { productId: '', quantity: 1, price: 0, total: 0, productName: '', availableStock: 0 }
+    { productId: '', quantity: 0, price: 0, total: 0, productName: '', availableStock: 0 }
   ]);
   const [inventoryList, setInventoryList] = useState([]);
   const [customer, setCustomer] = useState('');

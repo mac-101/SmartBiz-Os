@@ -3,7 +3,7 @@ import { ref, update } from 'firebase/database'; // Swapped set/push for update
 import { db, auth } from '../../firebase.config';
 import { onAuthStateChanged } from 'firebase/auth';
 
-function ExpenseForm() {
+function ExpenseForm({onClose}) {
   const [expenses, setExpenses] = useState([
     { id: Date.now(), category: '', description: '', amount: 0, paymentMethod: 'cash' }
   ]);
@@ -83,7 +83,7 @@ function ExpenseForm() {
       await update(ref(db), updates);
 
       alert(`✅ Successfully recorded ${validExpenses.length} individual expense entries!`);
-
+      onClose()
       // Reset form
       setExpenses([{ id: Date.now(), category: '', description: '', amount: 0, paymentMethod: 'cash' }]);
       setGeneralNotes('');

@@ -3,7 +3,7 @@ import { ref, onValue, set, update } from 'firebase/database';
 import { db, auth } from '../../firebase.config';
 import { onAuthStateChanged } from 'firebase/auth'; // Added for better auth handling
 
-export default function SaleForm() {
+export default function SaleForm({onClose}) {
   const [products, setProducts] = useState([
     { productId: '', quantity: 0, price: 0, total: 0, productName: '', availableStock: 0 }
   ]);
@@ -134,13 +134,12 @@ export default function SaleForm() {
       });
 
       // 4. EXECUTE ALL UPDATES AT ONCE (Atomic Update)
-      console.log("📤 Sending all individual records to Firebase...");
       await update(ref(db), updates);
       
-      console.log("✅ All items saved successfully!");
       alert(`✅ ${products.length} item(s) recorded successfully!`);
 
       // Reset Form
+      onClose();
       setProducts([{ productId: '', quantity: 1, price: 0, total: 0, productName: '', availableStock: 0 }]);
       setCustomer('');
 

@@ -4,6 +4,7 @@ import ProtectedRoute from './components/protectedRoute';
 import { AppLayout } from './components/appLayout.jsx';
 import BusinessSignup from './forms/signUp.jsx';
 import BusinessLogin from './forms/login.jsx';
+import LandingPage from './pages/landing.jsx';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/login" element={<BusinessLogin />} />
         <Route path="/signup" element={<BusinessSignup />} />
+        <Route path="/landing" element={<LandingPage />} />
         
         {/* LANDING PAGE REDIRECT: 
             This makes / act as a shortcut to /dashboard */}

@@ -66,10 +66,15 @@ export function AppLayout() {
             const isLarge = window.innerWidth >= 1100;
             setSidebarVisible(isLarge);
         };
+
+        // Initial check
         handleResize();
+
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
+
+
 
     const handleLogout = async () => {
         try {
@@ -95,19 +100,28 @@ export function AppLayout() {
     return (
         <div className="w-full min-h-screen flex flex-col md:flex-row bg-white">
             {/* Sidebar */}
+            {/* MOBILE OVERLAY: Closes sidebar when clicking outside on mobile */}
+            {isSidebarVisible && window.innerWidth < 1100 && (
+                <div
+                    className="fixed inset-0 z-40 transition-opacity"
+                    onClick={() => setSidebarVisible(false)}
+                />
+            )}
+
+            {/* Sidebar */}
             {isSidebarVisible && (
-                <div className="fixed md:relative z-40 h-screen">
-                    <Sidebar 
-                        active={activeTab} 
-                        handleLogout={handleLogout} 
-                        onclick={handleSidebarItemClick} 
+                <div className="fixed md:relative z-50 h-screen"> {/* Increased z-index to 50 */}
+                    <Sidebar
+                        active={activeTab}
+                        handleLogout={handleLogout}
+                        onclick={handleSidebarItemClick}
                     />
                 </div>
             )}
 
             {/* Main Content */}
             <div className={`flex-1 min-h-screen w-full transition-all duration-300 ${isSidebarVisible ? "md:ml-64" : ""}`}>
-                
+
                 <header className="sticky top-0 z-30 w-full bg-white px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <button
@@ -120,7 +134,7 @@ export function AppLayout() {
                             {activeTab}
                         </h2>
                     </div>
-                    
+
                     <div className="flex items-center gap-3">
                         <div className="text-right block">
                             <p className="text-xs font-bold text-gray-900 leading-none">SmartBiz OS</p>

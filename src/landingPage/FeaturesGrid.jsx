@@ -33,7 +33,7 @@ const features = [
 
 export default function FeaturesGrid() {
   return (
-    <section className="py-24 bg-white">
+    <section id="how-it-works" className="py-24 bg-white">
       <div className="max-w-6xl mx-auto px-6">
         {/* Section Header */}
         <div className="text-center mb-20 border-t border-gray-100 pt-16">

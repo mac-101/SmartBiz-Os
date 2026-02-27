@@ -1,6 +1,12 @@
 import dashboard from "../assets/localhost_5173_dashboard.png";
+import { useNavigate } from "react-router-dom";
+
+
 
 export default function HeroSection() {
+
+    const navigate = useNavigate();
+
     return (
         <section className="text-center py-20 px-6">
             <h1 className="text-4xl md:text-8xl font-medium">
@@ -10,7 +16,7 @@ export default function HeroSection() {
                 Get real-time insights,track cash flow, and make smart financial decisions with SmartBiz OS. Your all-in-one dashboard for business success.
             </p>
 
-            <button className="bg-black text-white mt-8 px-6 py-2 rounded-lg">
+            <button onClick={() => navigate("/signUp")} className="bg-black text-white mt-8 px-6 py-2 rounded-lg">
                 Get Started
             </button>
 

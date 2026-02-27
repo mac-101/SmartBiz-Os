@@ -93,7 +93,7 @@ export default function TrustedBrands() {
         </div>
       </section>
 
-      <section className="py-24 bg-white">
+      <section id="features" className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16 border-t border-gray-100 pt-16">
             <h2 className="text-4xl font-bold text-gray-900 tracking-tight">

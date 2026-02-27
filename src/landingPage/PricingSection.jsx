@@ -6,12 +6,13 @@ const plans = [
     features: ["Up to 10 users", "Core dashboard & reporting", "Standard integrations", "Email support"],
     button: "Get Started",
     popular: false,
+    free: true
   },
   {
     name: "Growth",
     price: "$149",
     desc: "Built for scaling teams needing advanced insights and automation.",
-    features: ["Up to 50 users", "Advanced analytics", "Priority integrations", "Automated workflows"],
+    features: ["Up to 50 users", "Advanced analytics", "Priority integrations", "Automated workflows", "AI analytics and insights", "Priority support"],
     button: "Start Growing",
     popular: true,
   },
@@ -19,7 +20,7 @@ const plans = [
     name: "Enterprise",
     price: "Custom",
     desc: "Tailored for large organizations with strict compliance.",
-    features: ["Unlimited users", "Dedicated manager", "On-premise deployment", "24/7 support"],
+    features: ["Unlimited users", "Dedicated manager", "On-premise deployment", "24/7 support", "AI analytics and insights", "Custom integrations", "Advanced security features"],
     button: "Talk to Sales",
     popular: false,
   },
@@ -52,7 +53,8 @@ export function PricingSection() {
 
               <div className="mb-8">
                 <span className="text-5xl font-bold text-gray-900">{plan.price}</span>
-                {plan.price !== "Custom" && <span className="text-gray-400 text-sm ml-2">/month</span>}
+                {plan.price !== "Custom" && <span className="text-gray-400 text-sm ml-2">/month</span>} <br />
+                {plan.free && <span className="text-green-500 text-sm ml-2 font-bold">2 months free</span>}
               </div>
 
               <ul className="space-y-4 mb-10 flex-1">

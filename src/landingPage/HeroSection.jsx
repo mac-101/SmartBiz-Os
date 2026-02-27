@@ -20,14 +20,14 @@ export default function HeroSection() {
                 Get Started
             </button>
 
-            <div className="relative">
+            {/* <div className="relative">
                 <img
                     className="mt-16 w-[80%] rounded-xl shadow-lg mx-auto"
                     src={dashboard}
                     alt="dashboard preview"
                 />
                 <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent rounded-xl opacity-20"></div>
-            </div>
+            </div> */}
         </section>
     );
 }

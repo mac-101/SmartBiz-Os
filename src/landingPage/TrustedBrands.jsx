@@ -97,7 +97,7 @@ export default function TrustedBrands() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16 border-t border-gray-100 pt-16">
             <h2 className="text-4xl font-bold text-gray-900 tracking-tight">
-              Built to Empower Finance Teams.
+              Built to Enhance Business Operations.
             </h2>
             <p className="text-gray-500 mt-4 max-w-xl mx-auto leading-relaxed">
               Streamline financial operations with automation, insights, and security.

@@ -36,7 +36,7 @@ export function Testimonials() {
         <section id="testimonials" className="py-24 bg-white">
             <div className="max-w-6xl mx-auto px-6">
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl font-bold text-gray-900">Why People Choose Fineeds</h2>
+                    <h2 className="text-4xl font-bold text-gray-900">Why People Choose SmartBiz</h2>
                     <p className="text-gray-500 mt-4 max-w-xl mx-auto text-sm">
                         From solo professionals to global enterprises, Fineeds makes it simple to manage workflows and grow with confidence.
                     </p>

@@ -4,28 +4,28 @@ import dashboard3 from "../assets/expence.png";
 import dashboard4 from "../assets/inventory.png";
 
 const features = [
-    {
+  {
     title: "Inventory and Stock Management",
-    text: "Keep track of your inventory levels, monitor stock movements, and avoid overstocking or stockouts.",
+    text: ["inventory levels", "Low stock alert", " Avoid overstocking or stockouts"],
     image: dashboard4,
     reverse: false,
   },
   {
     title: "Sales Tracking and Cash Flow",
-    text: "Monitor your sales pipeline and cash flow trends to make informed decisions and keep your business thriving.",
+    text: ["Daily, Weekly ... sales", "cash flow", "Details to make informed decisions", " keep your business thriving."],
     image: dashboard2,
     reverse: true,
   },
   {
     title: "Expense Breakdown",
-    text: "See exactly where your money goes — from software and tools to operations and marketing.",
+    text: ["See exactly where your money goes — from", " software", "operations", " marketing"],
     image: dashboard3,
     reverse: false,
   },
-  
+
   {
     title: "Real-Time Financial Overview",
-    text: "Stay on top of your business with live updates on balance, income, expenses, and net profit — all in one glance.",
+    text: ["live updates on balance", " income", " expenses", "net profit"],
     image: dashboard1,
     reverse: true,
   },
@@ -72,9 +72,12 @@ export default function FeaturesGrid() {
                 <h3 className="text-2xl font-semibold text-gray-900">
                   {feature.title}
                 </h3>
-                <p className="text-gray-500 mt-4 leading-relaxed">
-                  {feature.text}
-                </p>
+                <div className="text-gray-500 mt-4 leading-relaxed">
+                  {feature.text.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </div>
+
               </div>
             </div>
           ))}

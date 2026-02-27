@@ -12,8 +12,8 @@ export default function LandingPage() {
     <>
       <Navbar />
       <HeroSection />
-      <TrustedBrands />
       <FeaturesGrid />
+      <TrustedBrands />
       <PricingSection />
       <Testimonials />
       <FAQ />

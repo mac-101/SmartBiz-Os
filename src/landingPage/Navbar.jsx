@@ -13,8 +13,8 @@ export default function Navbar() {
                 SmartBiz
             </h1>
             <div className="space-x-6">
-                <a href="#features">Features</a>
                 <a href="#how-it-works">How It Works</a>
+                <a href="#features">Features</a>
                 <a href="#testimonials">Testimonials</a>
                 <a href="#pricing">Pricing</a>
                 <a href="#faq">FAQ</a>

@@ -109,16 +109,26 @@ export default function Inventory() {
       </div>
 
       {showUpdateForm && (
-        <div className="fixed inset-0 w-full h-full backdrop-blur-md bg-black/30 flex items-center justify-center z-50 p-2 md:p-4"
-          onClick={handleBackdropClick}>
-          <div className="relative hide-scrollbar bg-white rounded-2xl shadow-2xl max-w-4xl w-full h-[98vh] md:max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setShowUpdateForm(false)} className="absolute top-4 right-4 z-50 p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">
+        <div
+          className="fixed inset-0 w-full h-full backdrop-blur-md bg-black/30 flex items-center justify-center z-50 p-2 md:p-4"
+          onClick={handleBackdropClick} // 1. Clicking here closes
+        >
+          <div
+            className="relative hide-scrollbar bg-white rounded-2xl shadow-2xl max-w-4xl w-full h-[98vh] md:max-h-[90vh] overflow-y-auto"
+            // 2. ADD THIS LINE:
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowUpdateForm(false)}
+              className="absolute top-4 right-4 z-50 p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors"
+            >
               <X size={20} />
             </button>
             <InventoryForm />
           </div>
         </div>
       )}
+
 
       {/* Controls */}
       <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200">
@@ -153,7 +163,7 @@ export default function Inventory() {
               <tr>
                 <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Product</th>
                 <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Stock Status</th>
-                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Cost Price</th> 
+                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Cost Price</th>
                 <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Selling Price</th>
                 <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Inventory Value</th>
                 <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Sales Value</th>

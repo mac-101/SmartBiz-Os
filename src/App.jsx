@@ -4,7 +4,7 @@ import ProtectedRoute from './components/protectedRoute';
 import { AppLayout } from './components/appLayout.jsx';
 import BusinessSignup from './forms/signUp.jsx';
 import BusinessLogin from './forms/login.jsx';
-import LandingPage from './pages/landing.jsx';
+import LandingPage from './pages/LandingPage.jsx';
 
 function App() {
   return (

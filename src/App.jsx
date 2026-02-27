@@ -12,22 +12,16 @@ function AppContent() {
     <Router>
       <FirstTimeWrapper>
         <Routes>
-          {/* Default Route: Redirects to the dashboard immediately */}
-          <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
-
-          {/* Public Landing Page */}
-          <Route path="/landing" element={<LandingPage />} />
-          <Route path="/signUp" element={<BusinessSignup />} />
-          <Route path="/login" element={<BusinessLogin />} />
-
-          {/* Protected Dashboard Area */}
-          <Route path="/app/*" element={
+          {/* Default to dashboard */}
+          <Route path="/" element={
             <ProtectedRoute>
               <AppLayout />
             </ProtectedRoute>
           } />
+          <Route path="/signUp" element={<BusinessSignup />} />
+          <Route path="/landingPage" element={<LandingPage />} />
+          <Route path="/login" element={<BusinessLogin />} />
           
-          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </FirstTimeWrapper>
     </Router>

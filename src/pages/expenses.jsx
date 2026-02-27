@@ -208,7 +208,7 @@ export default function Expenses() {
                 <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Ref ID</th>
                 <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Category</th>
                 <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Description</th>
-                <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Amount(₦)</th>
                 <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Date</th>
                 <th className="px-6 py-4"></th>
               </tr>
@@ -224,8 +224,7 @@ export default function Expenses() {
                     <td className="px-6 py-4 text-sm text-gray-600 font-medium">{expense.description || "—"}</td>
                     <td className="px-6 py-4 font-bold text-red-600 text-sm">
                       <div className="flex items-center">
-                        <MinusIcon size={12} className="mr-1 stroke-[3px]" />
-                        ₦{Number(expense.amount).toLocaleString()}
+                        {Number(expense.amount).toLocaleString()}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-xs text-gray-500 font-medium">{expense.date}</td>

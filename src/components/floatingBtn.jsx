@@ -13,32 +13,43 @@ export default function FloatingBtn({ formOpeners }) {
         formOpeners.openExpenseForm();
         break;
       case "inventory":
-        formOpeners.openInventoryForm();
+        // This now opens your UpdateStock/Restock form logic
+        formOpeners.openInventoryForm(); 
         break;
       default:
         console.log("Unknown action:", action);
     }
   };
 
-  const handleOptions = () => {
+  const toggleOptions = (e) => {
+    if (e) e.stopPropagation();
     setShowOptions(!showOptions);
   };
 
   const handleAIClick = () => {
-    // AI functionality here - could be chat, suggestions, etc.
     console.log("AI button clicked");
     alert("AI Assistant - Coming soon!");
   };
 
   return (
     <>
+      {/* Invisible Overlay to close the menu when clicking outside */}
+      {showOptions && (
+        <div 
+          className="fixed inset-0 z-40 bg-transparent" 
+          onClick={() => setShowOptions(false)}
+        />
+      )}
+
       <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-3 z-50">
         {showOptions && (
           <div className="mb-4 p-4 bg-white rounded-xl shadow-xl border border-gray-200 flex flex-col space-y-3 min-w-[200px] animate-fadeIn">
             <p className="text-sm font-medium text-gray-700 mb-2">Add New Record</p>
+            
             <button
-              onClick={() => {
-                handleOptions();
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowOptions(false);
                 handleMainClick("sale");
               }}
               className="flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg px-4 py-3 transition-all hover:scale-[1.02]"
@@ -50,9 +61,11 @@ export default function FloatingBtn({ formOpeners }) {
               </div>
               <span className="font-medium">Add Sale</span>
             </button>
+
             <button
-              onClick={() => {
-                handleOptions();
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowOptions(false);
                 handleMainClick("expense");
               }}
               className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg px-4 py-3 transition-all hover:scale-[1.02]"
@@ -64,9 +77,11 @@ export default function FloatingBtn({ formOpeners }) {
               </div>
               <span className="font-medium">Add Expense</span>
             </button>
+
             <button
-              onClick={() => {
-                handleOptions();
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowOptions(false);
                 handleMainClick("inventory");
               }}
               className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg px-4 py-3 transition-all hover:scale-[1.02]"
@@ -76,53 +91,29 @@ export default function FloatingBtn({ formOpeners }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <span className="font-medium">Add Product</span>
+              <span className="font-medium">Restock/Update</span>
             </button>
           </div>
         )}
 
         <div className="flex items-center gap-3">
-          {/* AI Button - Shows when main button is clicked */}
           {showOptions && (
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 handleAIClick();
-                handleOptions();
+                setShowOptions(false);
               }}
-              className="
-                bg-linear-to-r from-purple-500 to-purple-600 text-white
-                rounded-full
-                w-12 h-12
-                flex items-center justify-center
-                shadow-lg
-                hover:from-purple-600 hover:to-purple-700
-                transition-all duration-300
-                hover:scale-105
-                focus:outline-none
-                focus:ring-2 focus:ring-purple-400
-                animate-fadeIn
-              "
+              className="bg-linear-to-r from-purple-500 to-purple-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 animate-fadeIn"
               title="AI Assistant"
             >
               <Sparkles size={20} />
             </button>
           )}
 
-          {/* Main Plus Button */}
           <button
-            onClick={handleOptions}
-            className={`
-              bg-linear-to-r from-blue-500 to-blue-600 text-white
-              rounded-full
-              w-14 h-14
-              flex items-center justify-center
-              shadow-lg
-              hover:from-blue-600 hover:to-blue-700
-              transition-all duration-300
-              ${showOptions ? 'rotate-45' : 'rotate-0'}
-              focus:outline-none
-              focus:ring-2 focus:ring-blue-400
-            `}
+            onClick={toggleOptions}
+            className={`bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 ${showOptions ? 'rotate-45' : 'rotate-0'} focus:outline-none focus:ring-2 focus:ring-blue-400`}
             title="Quick Actions"
           >
             <Plus size={24} />
@@ -130,21 +121,12 @@ export default function FloatingBtn({ formOpeners }) {
         </div>
       </div>
 
-      {/* Add this to your global CSS or Tailwind config for animation */}
       <style>{`
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
-        }
+        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
       `}</style>
     </>
   );

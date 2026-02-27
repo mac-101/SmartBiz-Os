@@ -4,7 +4,7 @@ import { db, auth } from '../../firebase.config';
 
 function InventoryForm() {
   const [products, setProducts] = useState([
-    { id: Date.now(), product: '', category: '', quantity: 0, price: 0, reorderLevel: 5 }
+    { id: Date.now(), product: '', category: '', quantity: 0, cost: 0, price: 0, reorderLevel: 5 }
   ]);
 
   const [categories, setCategories] = useState(['Electronics', 'Furniture', 'Office Supplies', 'Accessories']);
@@ -14,7 +14,7 @@ function InventoryForm() {
   // --- Logic Functions ---
 
   const addProduct = () => {
-    setProducts([...products, { id: Date.now(), product: '', category: '', quantity: 0, price: 0, reorderLevel: 5 }]);
+    setProducts([...products, { id: Date.now(), product: '', category: '', quantity: 0, cost: 0, price: 0, reorderLevel: 5 }]);
   };
 
   const removeProduct = (id) => {
@@ -29,7 +29,7 @@ function InventoryForm() {
 
   const calculateTotalValue = () => {
     return products.reduce((total, prod) => 
-      total + ((parseFloat(prod.price) || 0) * (parseInt(prod.quantity) || 0)), 0
+      total + ((parseFloat(prod.cost) || 0) * (parseInt(prod.quantity) || 0)), 0
     );
   };
 
@@ -71,7 +71,7 @@ function InventoryForm() {
       alert("Inventory successfully updated!");
       
       // Reset form properly
-      setProducts([{ id: Date.now(), product: '', category: '', quantity: 0, price: 0, reorderLevel: 5 }]);
+      setProducts([{ id: Date.now(), product: '', category: '', quantity: 0, cost: 0, price: 0, reorderLevel: 5 }]);
     } catch (err) {
       alert("Error saving: " + err.message);
     }
@@ -111,10 +111,10 @@ function InventoryForm() {
         <div className='space-y-4'>
           {products.map((product, index) => {
             const status = getStockStatus(product.quantity, product.reorderLevel);
-            const itemTotal = (parseFloat(product.price) || 0) * (parseInt(product.quantity) || 0);
+            const itemTotal = (parseFloat(product.cost) || 0) * (parseInt(product.quantity) || 0);
 
             return (
-              <div key={product.id} className='p-5 border border-gray-200 rounded-xl bg-white hover:shadow-md transition-shadow'>
+              <div key={product.id} className='p-3 border border-gray-200 rounded-xl bg-white hover:shadow-md transition-shadow'>
                 <div className='flex justify-between items-center mb-4'>
                   <div className='flex items-center gap-3'>
                     <span className='bg-gray-800 text-white w-6 h-6 flex items-center justify-center rounded-full text-xs'>{index + 1}</span>
@@ -127,7 +127,7 @@ function InventoryForm() {
                   )}
                 </div>
 
-                <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
+                <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4'>
                   <div>
                     <label className='text-[10px] uppercase tracking-wider font-bold text-gray-400'>Product Name</label>
                     <input
@@ -160,7 +160,16 @@ function InventoryForm() {
                     />
                   </div>
                   <div>
-                    <label className='text-[10px] uppercase tracking-wider font-bold text-gray-400'>Price (₦)</label>
+                    <label className='text-[10px] uppercase tracking-wider font-bold text-gray-400'>Purchase Cost (₦)</label>
+                    <input
+                      type="number"
+                      value={product.cost}
+                      onChange={(e) => updateProduct(product.id, 'cost', e.target.value)}
+                      className='w-full mt-1 p-2 bg-gray-50 border-transparent border-b-gray-200 border-2 focus:border-blue-500 focus:bg-white outline-none rounded-md text-sm'
+                    />
+                  </div>
+                  <div>
+                    <label className='text-[10px] uppercase tracking-wider font-bold text-gray-400'>Selling Price (₦)</label>
                     <input
                       type="number"
                       value={product.price}

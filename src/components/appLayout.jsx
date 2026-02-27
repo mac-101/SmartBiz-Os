@@ -3,7 +3,7 @@ import FloatingBtn from "./floatingBtn.jsx";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import SaleForm from "../forms/saleForm.jsx";
-import InventoryForm from "../forms/inventoryForm.jsx";
+import UpdateStock from "../forms/updateStock.jsx";
 import ExpenseForm from "../forms/expenceForm.jsx";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase.config";
@@ -86,7 +86,7 @@ export function AppLayout() {
     const renderForm = () => {
         const forms = {
             sale: <SaleForm onClose={closeForm} />,
-            inventory: <InventoryForm onClose={closeForm} />,
+            inventory: <UpdateStock close={closeForm} />,
             expense: <ExpenseForm onClose={closeForm} />
         };
         return forms[formType] || forms.sale;

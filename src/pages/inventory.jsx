@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { ref, onValue, remove, update } from "firebase/database";
 import { db, auth } from "../../firebase.config";
+import { X } from "lucide-react";
 import { onAuthStateChanged } from 'firebase/auth';
+import InventoryForm from "../forms/inventoryForm";
 
 export default function Inventory() {
   const [products, setProducts] = useState([]);
@@ -9,6 +11,7 @@ export default function Inventory() {
   const [user, setUser] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortBy, setSortBy] = useState("name");
+  const [showUpdateForm, setShowUpdateForm] = useState(false);
 
   // 1. Auth Listener
   useEffect(() => {
@@ -79,6 +82,9 @@ export default function Inventory() {
     }
   };
 
+  const handleBackdropClick = (e) => setShowUpdateForm(false);
+
+
   if (loading) return <InventorySkeleton />;
 
   return (
@@ -102,6 +108,18 @@ export default function Inventory() {
         </div>
       </div>
 
+      {showUpdateForm && (
+        <div className="fixed inset-0 w-full h-full backdrop-blur-md bg-black/30 flex items-center justify-center z-50 p-2 md:p-4"
+          onClick={handleBackdropClick}>
+          <div className="relative hide-scrollbar bg-white rounded-2xl shadow-2xl max-w-4xl w-full h-[98vh] md:max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setShowUpdateForm(false)} className="absolute top-4 right-4 z-50 p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">
+              <X size={20} />
+            </button>
+            <InventoryForm />
+          </div>
+        </div>
+      )}
+
       {/* Controls */}
       <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -121,6 +139,9 @@ export default function Inventory() {
               <option value="priceDesc">Price: High to Low</option>
             </select>
           </div>
+          <div>
+            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors" onClick={() => setShowUpdateForm(true)}>Add New Product</button>
+          </div>
         </div>
       </div>
 
@@ -132,15 +153,21 @@ export default function Inventory() {
               <tr>
                 <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Product</th>
                 <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Stock Status</th>
-                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Cost Price</th> 
+                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Selling Price</th>
                 <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Inventory Value</th>
-                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Sales Value</th>
+                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Estimated Profit</th>
+                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredProducts.map((p) => {
                 const isLow = Number(p.quantity) < (Number(p.reorderLevel) || 5);
                 const isEmpty = Number(p.quantity) === 0;
+                const inventoryValue = Number(p.quantity) * Number(p.cost);
+                const salesValue = Number(p.quantity) * Number(p.price);
+                const profit = salesValue - inventoryValue;
                 return (
                   <tr key={p.firebaseKey} className={`hover:bg-gray-50 transition-colors ${isEmpty ? 'bg-red-50/30' : ''}`}>
                     <td className="px-6 py-4">
@@ -150,17 +177,22 @@ export default function Inventory() {
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className={`text-sm font-semibold ${isEmpty ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-gray-700'}`}>
-                          {p.quantity} <span className="text-xs font-normal text-gray-400">units</span>
+                          {p.quantity} <br /> <span className="text-xs font-normal text-gray-400">units</span>
                         </span>
                         {isLow && <span className="text-[10px] font-bold uppercase tracking-tight text-amber-500">{isEmpty ? "Out of Stock" : "Low Stock"}</span>}
                       </div>
                     </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">₦{Number(p.cost).toLocaleString()}</td>
                     <td className="px-6 py-4 text-sm text-gray-600 font-medium">₦{Number(p.price).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">₦{(p.quantity * p.cost).toLocaleString()}</td>
                     <td className="px-6 py-4 text-sm font-semibold text-gray-900">₦{(p.quantity * p.price).toLocaleString()}</td>
+                    <td className={`px-6 py-4 text-sm font-semibold ${profit > 0 ? 'text-green-600' : profit < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                      {profit >= 0 ? '+' : '-'}₦{Math.abs(profit).toLocaleString()}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5">
-                        <button onClick={() => handleQuantityChange(p.firebaseKey, -1)} className="w-8 h-8 flex items-center justify-center border border-gray-200 hover:bg-red-50 text-gray-500 hover:text-red-600 rounded-lg transition-colors">-</button>
-                        <button onClick={() => handleQuantityChange(p.firebaseKey, 1)} className="w-8 h-8 flex items-center justify-center border border-gray-200 hover:bg-green-50 text-gray-500 hover:text-green-600 rounded-lg transition-colors">+</button>
+                        {/* <button onClick={() => handleQuantityChange(p.firebaseKey, -1)} className="w-8 h-8 flex items-center justify-center border border-gray-200 hover:bg-red-50 text-gray-500 hover:text-red-600 rounded-lg transition-colors">-</button>
+                        <button onClick={() => handleQuantityChange(p.firebaseKey, 1)} className="w-8 h-8 flex items-center justify-center border border-gray-200 hover:bg-green-50 text-gray-500 hover:text-green-600 rounded-lg transition-colors">+</button> */}
                         <button onClick={() => handleDelete(p.firebaseKey)} className="ml-2 p-1.5 text-gray-300 hover:text-red-500 transition-colors">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>

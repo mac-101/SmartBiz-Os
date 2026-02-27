@@ -208,7 +208,7 @@ export default function Sales() {
                 <tr>
                 <th className="px-6 py-4 text-left text-[11px] font-bold uppercase text-gray-400 tracking-wider">Product Item</th>
                 <th className="px-6 py-4 text-left text-[11px] font-bold uppercase text-gray-400 tracking-wider">Qty Sold</th>
-                <th className="px-6 py-4 text-left text-[11px] font-bold uppercase text-gray-400 tracking-wider">Total Sale</th>
+                <th className="px-6 py-4 text-left text-[11px] font-bold uppercase text-gray-400 tracking-wider">Total Sale(₦)</th>
                 <th className="px-6 py-4 text-left text-[11px] font-bold uppercase text-gray-400 tracking-wider">Date</th>
                 <th className="px-6 py-4"></th>
                 </tr>
@@ -218,7 +218,7 @@ export default function Sales() {
                 <tr key={sale.id} className="hover:bg-blue-50/30 transition-colors">
                     <td className="px-6 py-4 font-semibold text-gray-800 text-sm">{sale.productName}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{sale.quantity} units</td>
-                    <td className="px-6 py-4 font-bold text-blue-600 text-sm">₦{Number(sale.total).toLocaleString()}</td>
+                    <td className="px-6 py-4 font-bold text-blue-600 text-sm">{Number(sale.total).toLocaleString()}</td>
                     <td className="px-6 py-4 text-xs text-gray-500 font-medium">{sale.date.split('T')[0]}</td>
                     <td className="px-6 py-4 text-right">
                         <button onClick={() => handleDeleteSale(sale.id)} className="text-gray-300 hover:text-red-500 transition-colors p-2">

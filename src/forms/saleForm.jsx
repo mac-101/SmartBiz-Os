@@ -274,7 +274,7 @@ export default function SaleForm() {
         <button
           type="submit"
           disabled={!validateStock()}
-          className='w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-100'
+          className='w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed '
         >
           {validateStock() ? 'Complete Sale' : 'Please check items & stock'}
         </button>

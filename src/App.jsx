@@ -5,35 +5,36 @@ import { AppLayout } from './components/appLayout.jsx';
 import BusinessSignup from './forms/signUp.jsx';
 import BusinessLogin from './forms/login.jsx';
 import LandingPage from './pages/LandingPage.jsx';
+import FirstTimeWrapper from './firstTimeWrapper.jsx';
 
-function App() {
+function AppContent() {
   return (
     <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<BusinessLogin />} />
-        <Route path="/signup" element={<BusinessSignup />} />
-        <Route path="/landing" element={<LandingPage />} />
-        
-        {/* LANDING PAGE REDIRECT: 
-            This makes / act as a shortcut to /dashboard */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <FirstTimeWrapper>
+        <Routes>
+          {/* Default Route: Redirects to the dashboard immediately */}
+          <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
 
-        {/* The Actual Dashboard Route */}
-        <Route 
-          path="/dashboard" 
-          element={
+          {/* Public Landing Page */}
+          <Route path="/landing" element={<LandingPage />} />
+          <Route path="/signUp" element={<BusinessSignup />} />
+          <Route path="/login" element={<BusinessLogin />} />
+
+          {/* Protected Dashboard Area */}
+          <Route path="/app/*" element={
             <ProtectedRoute>
               <AppLayout />
             </ProtectedRoute>
-          } 
-        />
-        
-        {/* Catch-all for 404s */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+          } />
+          
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </FirstTimeWrapper>
     </Router>
   );
+}
+function App(){
+  return <AppContent />;
 }
 
 export default App;

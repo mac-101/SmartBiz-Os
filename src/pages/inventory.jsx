@@ -195,7 +195,7 @@ export default function Inventory() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button className="p-2 text-slate-300 hover:text-slate-600 transition-colors"><MoreVertical size={16}/></button>
+                        {/* <button className="p-2 text-slate-300 hover:text-slate-600 transition-colors"><MoreVertical size={16}/></button> */}
                         <button onClick={() => handleDelete(p.firebaseKey)} className="p-2 text-slate-300 hover:text-rose-500 transition-colors">
                           <Trash2 size={16} />
                         </button>

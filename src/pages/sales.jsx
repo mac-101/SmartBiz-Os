@@ -23,6 +23,11 @@ export default function Sales() {
   const [productFilter, setProductFilter] = useState('all');
   const [customDate, setCustomDate] = useState('');
 
+   const handleDelete = (id) => () => {
+    if (window.confirm("Are you sure you want to delete this sale record?")) {
+      remove(ref(db, `businessData/${user.uid}/sales/${id}`));
+    }}
+
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -41,6 +46,8 @@ export default function Sales() {
     });
     return () => unsubscribe();
   }, [user]);
+
+  
 
   // Optimized Date Range Logic
   const filteredSales = useMemo(() => {
@@ -88,6 +95,8 @@ export default function Sales() {
       ? filteredSales.reduce((acc, s) => acc + (Number(s.total) || 0), 0) / filteredSales.length 
       : 0
   };
+
+ 
 
   const exportToCSV = () => {
     if (filteredSales.length === 0) return;
@@ -189,13 +198,13 @@ export default function Sales() {
                   <td className="px-8 py-5">
                     <span className="text-sm font-black text-slate-900">₦{Number(sale.total).toLocaleString()}</span>
                   </td>
-                  <td className="px-8 py-5 text-right text-xs font-bold text-slate-400">
+                  <td className="px-8 flex py-5 text-right text-xs font-bold text-slate-400">
                     {new Date(sale.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-8 py-5 text-right">
                     <button 
-                      onClick={() => remove(ref(db, `businessData/${user.uid}/sales/${sale.id}`))}
-                      className="p-2 text-slate-200 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                      onClick={handleDelete(sale.id)}
+                      className="p-2 text-slate-300 "
                     >
                       <Trash2 size={16} />
                     </button>

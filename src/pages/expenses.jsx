@@ -238,7 +238,7 @@ export default function Expenses() {
                   <td className="px-8 py-5 text-right">
                     <button 
                       onClick={() => handleDelete(exp.id)} 
-                      className="p-2 text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                      className="p-2 text-slate-300 "
                     >
                       <Trash2 size={14} />
                     </button>

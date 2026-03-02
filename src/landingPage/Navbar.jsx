@@ -17,19 +17,21 @@ export default function Navbar() {
   return (
     <nav className="relative bg-white border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        
+
         {/* Logo */}
         <h1 className="text-xl font-bold flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-          <LucideCuboid className="w-6 h-6 text-blue-600" />
+          <div className="w-7 h-7 bg-slate-900 rounded-md flex items-center justify-center">
+            <div className="w-3 h-3 bg-white rounded-full" />
+          </div>
           SmartBiz
         </h1>
 
         {/* Desktop Links (Hidden on mobile) */}
         <div className="hidden md:flex items-center space-x-8">
           {navLinks.map((link) => (
-            <a 
-              key={link.name} 
-              href={link.href} 
+            <a
+              key={link.name}
+              href={link.href}
               className="text-sm font-medium text-gray-600 hover:text-black transition-colors"
             >
               {link.name}
@@ -39,15 +41,15 @@ export default function Navbar() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate('/login')} 
+          <button
+            onClick={() => navigate('/login')}
             className="hidden sm:block bg-black text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-gray-800 transition-all"
           >
             Login
           </button>
 
           {/* Mobile Toggle Button */}
-          <button 
+          <button
             className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             onClick={() => setIsOpen(!isOpen)}
           >
@@ -63,17 +65,17 @@ export default function Navbar() {
       `}>
         <div className="flex flex-col p-6 space-y-4">
           {navLinks.map((link) => (
-            <a 
-              key={link.name} 
-              href={link.href} 
+            <a
+              key={link.name}
+              href={link.href}
               onClick={() => setIsOpen(false)}
               className="text-base font-semibold text-gray-700 hover:text-blue-600 transition-colors"
             >
               {link.name}
             </a>
           ))}
-          <button 
-            onClick={() => { navigate('/login'); setIsOpen(false); }} 
+          <button
+            onClick={() => { navigate('/login'); setIsOpen(false); }}
             className="w-full bg-black text-white py-3 rounded-xl font-bold"
           >
             Login

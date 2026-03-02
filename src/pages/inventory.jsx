@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { ref, onValue, remove, update } from "firebase/database";
 import { db, auth } from "../../firebase.config";
-import { X } from "lucide-react";
+import { 
+  X, 
+  Plus, 
+  Search, 
+  Filter, 
+  MoreVertical, 
+  Trash2, 
+  ArrowUpDown,
+  Package,
+  DollarSign,
+  AlertTriangle,
+  TrendingUp
+} from "lucide-react";
 import { onAuthStateChanged } from 'firebase/auth';
 import InventoryForm from "../forms/inventoryForm";
 
@@ -12,229 +24,223 @@ export default function Inventory() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortBy, setSortBy] = useState("name");
   const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // 1. Auth Listener
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) setUser(currentUser);
-      else { setUser(null); setLoading(false); }
+    const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (!u) setLoading(false);
     });
     return () => unsubscribeAuth();
   }, []);
 
-  // 2. Real-time Firebase Sync
   useEffect(() => {
     if (!user) return;
     const inventoryRef = ref(db, `businessData/${user.uid}/inventory`);
     const unsubscribe = onValue(inventoryRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const list = Object.keys(data).map(key => ({
-          firebaseKey: key,
-          ...data[key]
-        }));
-        setProducts(list);
+        setProducts(Object.keys(data).map(key => ({ firebaseKey: key, ...data[key] })));
       } else setProducts([]);
       setLoading(false);
     });
     return () => unsubscribe();
   }, [user]);
 
-  // 3. Logic & Calculations
   const stats = useMemo(() => {
+    const totalQty = products.reduce((acc, p) => acc + (Number(p.quantity) || 0), 0);
+    const totalVal = products.reduce((acc, p) => acc + ((Number(p.quantity) || 0) * (Number(p.cost) || 0)), 0);
     return {
-      totalItems: products.reduce((acc, p) => acc + (Number(p.quantity) || 0), 0),
-      totalValue: products.reduce((acc, p) => acc + ((Number(p.quantity) || 0) * (Number(p.price) || 0)), 0),
-      lowStock: products.filter(p => (Number(p.quantity) || 0) < (Number(p.reorderLevel) || 5)).length,
-      outOfStock: products.filter(p => (Number(p.quantity) || 0) === 0).length,
+      totalItems: totalQty,
+      totalValue: totalVal,
+      lowStock: products.filter(p => (Number(p.quantity) || 0) < (Number(p.reorderLevel) || 5) && Number(p.quantity) > 0).length,
+      outOfStock: products.filter(p => (Number(p.quantity) || 0) <= 0).length,
       categories: ["All", ...new Set(products.map(p => p.category).filter(Boolean))]
     };
   }, [products]);
 
   const filteredProducts = useMemo(() => {
     return products
-      .filter(p => selectedCategory === "All" || p.category === selectedCategory)
+      .filter(p => {
+        const matchesCat = selectedCategory === "All" || p.category === selectedCategory;
+        const matchesSearch = (p.productName || p.product || "").toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesCat && matchesSearch;
+      })
       .sort((a, b) => {
         const valA = sortBy === "name" ? (a.productName || a.product || "") : Number(a[sortBy.replace('Asc', '').replace('Desc', '')]);
         const valB = sortBy === "name" ? (b.productName || b.product || "") : Number(b[sortBy.replace('Asc', '').replace('Desc', '')]);
-
         if (sortBy === "name") return valA.localeCompare(valB);
-        if (sortBy.includes("Asc")) return valA - valB;
-        return valB - valA;
+        return sortBy.includes("Asc") ? valA - valB : valB - valA;
       });
-  }, [products, selectedCategory, sortBy]);
-
-  // 4. Actions
-  const handleQuantityChange = async (fKey, delta) => {
-    const item = products.find(p => p.firebaseKey === fKey);
-    if (!item) return;
-    const newQty = Math.max(0, (Number(item.quantity) || 0) + delta);
-    try {
-      await update(ref(db, `businessData/${user.uid}/inventory/${fKey}`), { quantity: newQty });
-    } catch (err) { alert("Update failed."); }
-  };
+  }, [products, selectedCategory, sortBy, searchTerm]);
 
   const handleDelete = async (fKey) => {
-    if (window.confirm("Delete this product?")) {
-      try {
-        await remove(ref(db, `businessData/${user.uid}/inventory/${fKey}`));
-      } catch (err) { alert("Delete failed."); }
+    if (confirm("Permanently remove this product from inventory?")) {
+      await remove(ref(db, `businessData/${user.uid}/inventory/${fKey}`));
     }
   };
-
-  const handleBackdropClick = (e) => setShowUpdateForm(false);
-
 
   if (loading) return <InventorySkeleton />;
 
   return (
-    <div className="p-4 md:p-6 rounded-2xl space-y-6 min-h-screen bg-gray-50">
-
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="max-w-[1600px] mx-auto p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
+      
+      {/* 1. Header Area */}
+      <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-100 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Inventory Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Track and manage all products in stock</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Inventory Stock</h1>
+          <p className="text-sm text-slate-500 font-medium">Manage SKUs, reorder levels, and valuation</p>
         </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Items" val={stats.totalItems} sub="Units in stock" color="blue" icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-        <StatCard label="Total Value" val={`₦${stats.totalValue.toLocaleString()}`} sub="Inventory worth" color="green" icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        <div className="grid lg:col-span-2 grid-cols-2 gap-4">
-          <StatCard label="Low Stock" val={stats.lowStock} sub="Need restocking" color="amber" icon="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          <StatCard label="Out of Stock" val={stats.outOfStock} sub="Require attention" color="red" icon="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-        </div>
-      </div>
-
-      {showUpdateForm && (
-        <div
-          className="fixed inset-0 w-full h-full backdrop-blur-md bg-black/30 flex items-center justify-center z-50 p-2 md:p-4"
-          onClick={handleBackdropClick} // 1. Clicking here closes
+        <button 
+          onClick={() => setShowUpdateForm(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all active:scale-95"
         >
-          <div
-            className="relative hide-scrollbar bg-white rounded-2xl shadow-2xl max-w-4xl w-full h-[98vh] md:max-h-[90vh] overflow-y-auto"
-            // 2. ADD THIS LINE:
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setShowUpdateForm(false)}
-              className="absolute top-4 right-4 z-50 p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors"
-            >
-              <X size={20} />
-            </button>
-            <InventoryForm />
-          </div>
+          <Plus size={18} /> Add Product
+        </button>
+      </div>
+
+      {/* 2. Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <MetricTile label="Total Units" val={stats.totalItems} icon={<Package size={18}/>} color="blue" />
+        <MetricTile label="Inventory Value" val={`₦${stats.totalValue.toLocaleString()}`} icon={<DollarSign size={18}/>} color="slate" />
+        <MetricTile label="Low Stock" val={stats.lowStock} icon={<AlertTriangle size={18}/>} color="amber" />
+        <MetricTile label="Stockouts" val={stats.outOfStock} icon={<TrendingUp size={18}/>} color="rose" />
+      </div>
+
+      {/* 3. Toolbar */}
+      <div className="bg-white  rounded-2xl p-4 flex flex-col md:flex-row justify-between gap-4 shadow-sm">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input 
+            type="text" 
+            placeholder="Search products by name..." 
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-      )}
-
-
-      {/* Controls */}
-      <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-800">Product Inventory</h2>
-            <p className="text-gray-500 text-xs mt-0.5">{filteredProducts.length} products found</p>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+            <Filter size={14} /> Filter
           </div>
-          <div className="flex flex-wrap gap-3">
-            <select className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-              {stats.categories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              <option value="name">Name A-Z</option>
-              <option value="quantityAsc">Quantity: Low to High</option>
-              <option value="quantityDesc">Quantity: High to Low</option>
-              <option value="priceAsc">Price: Low to High</option>
-              <option value="priceDesc">Price: High to Low</option>
-            </select>
-          </div>
-          <div>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors" onClick={() => setShowUpdateForm(true)}>Add New Product</button>
-          </div>
+          <select 
+            className="text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg px-3 py-2 outline-none"
+            value={selectedCategory} 
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            {stats.categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select 
+            className="text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg px-3 py-2 outline-none"
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="name">Sort by: Name</option>
+            <option value="quantityDesc">Sort by: Highest Stock</option>
+            <option value="priceDesc">Sort by: Highest Price</option>
+          </select>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+      {/* 4. Inventory Table */}
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Product</th>
-                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Stock Status</th>
-                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Cost Price</th>
-                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Selling Price</th>
-                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Inventory Value</th>
-                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Sales Value</th>
-                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Estimated Profit</th>
-                <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider"></th>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Product Info</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Stock level</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Pricing (Unit)</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Asset Value</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {filteredProducts.map((p) => {
-                const isLow = Number(p.quantity) < (Number(p.reorderLevel) || 5);
-                const isEmpty = Number(p.quantity) === 0;
-                const inventoryValue = Number(p.quantity) * Number(p.cost);
-                const salesValue = Number(p.quantity) * Number(p.price);
-                const profit = salesValue - inventoryValue;
+                const qty = Number(p.quantity) || 0;
+                const cost = Number(p.cost) || 0;
+                const price = Number(p.price) || 0;
+                const reorder = Number(p.reorderLevel) || 5;
+                
+                const isOutOfStock = qty <= 0;
+                const isLow = qty < reorder && !isOutOfStock;
+
                 return (
-                  <tr key={p.firebaseKey} className={`hover:bg-gray-50 transition-colors ${isEmpty ? 'bg-red-50/30' : ''}`}>
+                  <tr key={p.firebaseKey} className="group hover:bg-slate-50 transition-all">
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{p.product || p.productName || p.name}</div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">{p.category}</div>
+                      <div className="font-bold text-slate-900 text-sm">{p.product || p.productName}</div>
+                      <div className="text-[10px] font-bold text-blue-500 uppercase tracking-tight">{p.category || "General"}</div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className={`text-sm font-semibold ${isEmpty ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-gray-700'}`}>
-                          {p.quantity} <br /> <span className="text-xs font-normal text-gray-400">units</span>
+                    <td className="px-6 py-4 text-center">
+                      <div className="inline-flex flex-col items-center">
+                        <span className={`text-sm font-black ${isOutOfStock ? 'text-rose-500' : isLow ? 'text-amber-500' : 'text-slate-700'}`}>
+                          {qty} <span className="text-[10px] font-medium text-slate-400 uppercase ml-0.5">Units</span>
                         </span>
-                        {isLow && <span className="text-[10px] font-bold uppercase tracking-tight text-amber-500">{isEmpty ? "Out of Stock" : "Low Stock"}</span>}
+                        {isOutOfStock ? (
+                          <span className="text-[9px] bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full font-bold mt-1">OUT</span>
+                        ) : isLow ? (
+                          <span className="text-[9px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-bold mt-1">LOW</span>
+                        ) : (
+                          <span className="text-[9px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-bold mt-1">HEALTHY</span>
+                        )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">₦{Number(p.cost).toLocaleString()}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">₦{Number(p.price).toLocaleString()}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">₦{(p.quantity * p.cost).toLocaleString()}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">₦{(p.quantity * p.price).toLocaleString()}</td>
-                    <td className={`px-6 py-4 text-sm font-semibold ${profit > 0 ? 'text-green-600' : profit < 0 ? 'text-red-600' : 'text-gray-900'}`}>
-                      {profit >= 0 ? '+' : '-'}₦{Math.abs(profit).toLocaleString()}
+                    <td className="px-6 py-4">
+                      <div className="text-xs font-semibold text-slate-400">Cost: <span className="text-slate-900">₦{cost.toLocaleString()}</span></div>
+                      <div className="text-xs font-semibold text-slate-400">Sell: <span className="text-blue-600">₦{price.toLocaleString()}</span></div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5">
-                        {/* <button onClick={() => handleQuantityChange(p.firebaseKey, -1)} className="w-8 h-8 flex items-center justify-center border border-gray-200 hover:bg-red-50 text-gray-500 hover:text-red-600 rounded-lg transition-colors">-</button>
-                        <button onClick={() => handleQuantityChange(p.firebaseKey, 1)} className="w-8 h-8 flex items-center justify-center border border-gray-200 hover:bg-green-50 text-gray-500 hover:text-green-600 rounded-lg transition-colors">+</button> */}
-                        <button onClick={() => handleDelete(p.firebaseKey)} className="ml-2 p-1.5 text-gray-300 hover:text-red-500 transition-colors">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      <div className="text-sm font-bold text-slate-900">₦{(qty * cost).toLocaleString()}</div>
+                      <div className="text-[10px] font-bold text-emerald-500">POTENTIAL PROFIT: ₦{(qty * (price - cost)).toLocaleString()}</div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button className="p-2 text-slate-300 hover:text-slate-600 transition-colors"><MoreVertical size={16}/></button>
+                        <button onClick={() => handleDelete(p.firebaseKey)} className="p-2 text-slate-300 hover:text-rose-500 transition-colors">
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Modal Form */}
+      {showUpdateForm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowUpdateForm(false)} />
+          <div className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h2 className="text-xl font-bold text-slate-900">Add New Inventory Item</h2>
+              <button onClick={() => setShowUpdateForm(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={20}/></button>
+            </div>
+            <div className=" overflow-y-auto custom-scrollbar">
+              <InventoryForm onSuccess={() => setShowUpdateForm(false)} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function StatCard({ label, val, sub, color, icon }) {
-  const colors = {
-    blue: "border-blue-100 text-blue-600",
-    green: "border-green-100 text-green-600",
-    amber: "border-amber-100 text-amber-600",
-    red: "border-red-100 text-red-600"
+function MetricTile({ label, val, icon, color }) {
+  const themes = {
+    blue: "text-blue-600 bg-blue-50 border-blue-100",
+    slate: "text-slate-600 bg-slate-50 border-slate-100",
+    amber: "text-amber-600 bg-amber-50 border-amber-100",
+    rose: "text-rose-600 bg-rose-50 border-rose-100"
   };
   return (
-    <div className={`bg-white p-5 rounded-xl border ${colors[color]} shadow-sm`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-wider opacity-70 mb-1">{label}</p>
-          <h2 className="text-2xl font-semibold text-gray-800">{val}</h2>
-          <p className="text-[10px] text-gray-400 mt-1 font-medium">{sub}</p>
-        </div>
-        <svg className="w-6 h-6 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={icon} /></svg>
+    <div className={`p-6 rounded-2xl  bg-white shadow-sm flex items-center gap-4 transition-transform hover:scale-[1.02]`}>
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${themes[color]}`}>{icon}</div>
+      <div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
+        <h3 className="text-xl font-black text-slate-900">{val}</h3>
       </div>
     </div>
   );
@@ -242,17 +248,12 @@ function StatCard({ label, val, sub, color, icon }) {
 
 function InventorySkeleton() {
   return (
-    <div className="p-4 md:p-6 space-y-6 animate-pulse bg-gray-50 min-h-screen">
-      <div className="space-y-3">
-        <div className="h-8 w-64 bg-gray-200 rounded-lg"></div>
-        <div className="h-3 w-48 bg-gray-200 rounded-lg"></div>
+    <div className="p-6 space-y-8 animate-pulse bg-white min-h-screen">
+      <div className="h-10 w-48 bg-slate-100 rounded-lg"></div>
+      <div className="grid grid-cols-4 gap-6">
+        {[1,2,3,4].map(i => <div key={i} className="h-24 bg-slate-50 rounded-2xl border border-slate-100"></div>)}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-28 bg-white rounded-xl border border-gray-100 p-5"></div>
-        ))}
-      </div>
-      <div className="h-64 bg-white rounded-xl border border-gray-100"></div>
+      <div className="h-96 bg-slate-50 rounded-2xl border border-slate-100"></div>
     </div>
   );
 }

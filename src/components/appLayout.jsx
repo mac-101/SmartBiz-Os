@@ -1,6 +1,6 @@
 import Sidebar from "./sidebar.jsx";
 import FloatingBtn from "./floatingBtn.jsx";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Menu, X } from "lucide-react";
 import SaleForm from "../forms/saleForm.jsx";
 import UpdateStock from "../forms/updateStock.jsx";
@@ -12,159 +12,127 @@ import { useNavigate } from "react-router-dom";
 import Inventory from '../pages/inventory.jsx';
 import Expenses from '../pages/expenses.jsx';
 import Sales from '../pages/sales.jsx';
-// import Setting from '../pages/setting.jsx';
 import Profile from '../pages/profile.jsx';
 import Dashboard from '../pages/dashboard.jsx';
 
 export function AppLayout() {
     const [activeTab, setActiveTab] = useState("dashboard");
-    const [isSidebarVisible, setSidebarVisible] = useState(false);
+    // Start true only if screen is wide
+    const [isSidebarVisible, setSidebarVisible] = useState(window.innerWidth >= 1100);
     const [showForm, setShowForm] = useState(false);
     const [formType, setFormType] = useState("sale");
-    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // 1. RENDER CONTENT FUNCTION
-    const renderContent = () => {
-        switch (activeTab) {
-            case "dashboard": return <Dashboard />;
-            case "sales": return <Sales />;
-            case "expenses": return <Expenses />;
-            case "inventory": return <Inventory />;
-            case "assistant": return <div className="p-4">AI Assistant Content Goes Here</div>;
-            case "profile": return <Profile />;
-            // case "settings": return <Setting />;
-            default: return <div className="p-4"><Dashboard /></div>;
-        }
+    const views = {
+        dashboard: <Dashboard />,
+        sales: <Sales />,
+        expenses: <Expenses />,
+        inventory: <Inventory />,
+        assistant: <div className="p-8 font-bold text-gray-400 text-center">AI Assistant arriving soon...</div>,
+        profile: <Profile />,
     };
 
     const handleSidebarItemClick = (tabId) => {
         setActiveTab(tabId);
-        // On mobile, close sidebar after clicking
-        if (window.innerWidth < 1100) {
-            setSidebarVisible(false);
-        }
-    };
-
-    const formOpeners = {
-        openSaleForm: () => { setFormType("sale"); setShowForm(true); },
-        openInventoryForm: () => { setFormType("inventory"); setShowForm(true); },
-        openExpenseForm: () => { setFormType("expense"); setShowForm(true); }
+        // Auto-close only on mobile
+        if (window.innerWidth < 1100) setSidebarVisible(false);
     };
 
     const closeForm = () => setShowForm(false);
-    const handleBackdropClick = (e) => e.target === e.currentTarget && closeForm();
-    const toggleSidebar = () => setSidebarVisible(!isSidebarVisible);
-
-    useEffect(() => {
-        document.body.style.overflow = showForm ? "hidden" : "auto";
-        return () => { document.body.style.overflow = "auto"; };
-    }, [showForm]);
-
-    useEffect(() => {
-        const handleResize = () => {
-            const isLarge = window.innerWidth >= 1100;
-            setSidebarVisible(isLarge);
-        };
-
-        // Initial check
-        handleResize();
-
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
-
-
+    const formOpeners = useMemo(() => ({
+        openSaleForm: () => { setFormType("sale"); setShowForm(true); },
+        openInventoryForm: () => { setFormType("inventory"); setShowForm(true); },
+        openExpenseForm: () => { setFormType("expense"); setShowForm(true); }
+    }), []);
 
     const handleLogout = async () => {
         try {
-            setLoading(true);
             await signOut(auth);
             navigate("/login");
-        } catch (error) {
-            console.error("Error signing out:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const renderForm = () => {
-        const forms = {
-            sale: <SaleForm onClose={closeForm} />,
-            inventory: <UpdateStock close={closeForm} />,
-            expense: <ExpenseForm onClose={closeForm} />
-        };
-        return forms[formType] || forms.sale;
+        } catch (error) { console.error(error); }
     };
 
     return (
-        <div className="w-full min-h-screen flex flex-col md:flex-row bg-white">
-            {/* Sidebar */}
-            {/* MOBILE OVERLAY: Closes sidebar when clicking outside on mobile */}
-            {isSidebarVisible && window.innerWidth < 1100 && (
-                <div
-                    className="fixed inset-0 z-40 transition-opacity"
+        <div className="flex h-screen w-full bg-slate-50 overflow-hidden">
+            
+            {/* 1. SIDEBAR: Fixed on mobile, static on desktop */}
+            <div className={`
+                fixed inset-y-0 left-0 z-[100] w-64 transform transition-transform duration-300 ease-in-out bg-white shadow-xl
+                lg:relative lg:translate-x-0 lg:shadow-none lg:border-r lg:border-slate-100
+                ${isSidebarVisible ? "translate-x-0" : "-translate-x-full"}
+                ${!isSidebarVisible && "lg:hidden"} 
+            `}>
+                <Sidebar 
+                    active={activeTab} 
+                    handleLogout={handleLogout} 
+                    onclick={handleSidebarItemClick} 
+                />
+            </div>
+
+            {/* 2. MOBILE OVERLAY: Only shows when sidebar is open on small screens */}
+            {isSidebarVisible && (
+                <div 
+                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[90] lg:hidden"
                     onClick={() => setSidebarVisible(false)}
                 />
             )}
 
-            {/* Sidebar */}
-            {isSidebarVisible && (
-                <div className="fixed md:relative z-50 h-screen"> {/* Increased z-index to 50 */}
-                    <Sidebar
-                        active={activeTab}
-                        handleLogout={handleLogout}
-                        onclick={handleSidebarItemClick}
-                    />
-                </div>
-            )}
-
-            {/* Main Content */}
-            <div className={`flex-1 min-h-screen w-full transition-all duration-300 ${isSidebarVisible ? "md:ml-64" : ""}`}>
-
-                <header className="sticky top-0 z-30 w-full bg-white px-4 py-3 flex items-center justify-between">
+            {/* 3. MAIN CONTENT AREA */}
+            <div className="flex-1 flex flex-col min-w-0 h-full relative">
+                
+                {/* Header */}
+                <header className="h-16 flex-none bg-white border-b border-slate-100 px-4 md:px-6 flex items-center justify-between sticky top-0 z-50">
                     <div className="flex items-center gap-4">
-                        <button
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-                            onClick={toggleSidebar}
+                        <button 
+                            onClick={() => setSidebarVisible(!isSidebarVisible)}
+                            className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-600"
                         >
                             <Menu size={24} />
                         </button>
-                        <h2 className="text-lg font-bold text-gray-800 capitalize">
+                        <h1 className="text-lg font-bold text-slate-800 capitalize tracking-tight">
                             {activeTab}
-                        </h2>
+                        </h1>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <div className="text-right block">
-                            <p className="text-xs font-bold text-gray-900 leading-none">SmartBiz OS</p>
-                            <p className="text-[10px] text-blue-600 font-medium tracking-tight">Enterprise</p>
+                    <div className="flex items-center gap-2">
+                        <div className="text-right">
+                            <p className="text-[11px] font-black text-slate-900 leading-none">SmartBiZ Os</p>
+                            <p className="text-[9px] text-blue-600 font-bold uppercase mt-0.5 tracking-tighter">Enterprise Edition</p>
                         </div>
                     </div>
                 </header>
 
-                <FloatingBtn formOpeners={formOpeners} />
+                {/* Page Content: This scrolls independently */}
+                <main className="flex-1 overflow-y-auto overflow-x-hidden">
+                    <div className="max-w-[1600px] mx-auto min-h-full">
+                        {views[activeTab] || views.dashboard}
+                    </div>
+                </main>
 
-                {/* Form Modal */}
-                {showForm && (
-                    <div className="fixed inset-0 w-full h-full backdrop-blur-md bg-black/30 flex items-center justify-center z-50 p-2 md:p-4"
-                        onClick={handleBackdropClick}>
-                        <div className="relative hide-scrollbar bg-white rounded-2xl shadow-2xl max-w-4xl w-full h-[98vh] md:max-h-[90vh] overflow-y-auto">
-                            <button onClick={closeForm} className="absolute top-4 right-4 z-50 p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">
-                                <X size={20} />
-                            </button>
-                            <div className="p-1">{renderForm()}</div>
+                <FloatingBtn formOpeners={formOpeners} />
+            </div>
+
+            {/* 4. FORM MODAL */}
+            {showForm && (
+                <div 
+                    className="fixed inset-0 z-[200] flex items-center justify-center p-2 md:p-6 bg-slate-900/50 backdrop-blur-md"
+                    onClick={(e) => e.target === e.currentTarget && closeForm()}
+                >
+                    <div className="bg-white w-full max-w-4xl max-h-[95vh] overflow-y-auto rounded-3xl shadow-2xl relative">
+                        <button 
+                            onClick={closeForm}
+                            className="fixed md:absolute top-4 right-4 z-[210] p-2 bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200"
+                        >
+                            <X size={20} />
+                        </button>
+                        <div className="p-1">
+                            {formType === "sale" && <SaleForm onClose={closeForm} />}
+                            {formType === "inventory" && <UpdateStock close={closeForm} />}
+                            {formType === "expense" && <ExpenseForm onClose={closeForm} />}
                         </div>
                     </div>
-                )}
-
-                {/* Rendered View Area */}
-                <div className="w-full min-h-screen ">
-                    <div className="w-full min-h-screen ">
-                        {renderContent()}
-                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

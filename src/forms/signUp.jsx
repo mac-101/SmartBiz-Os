@@ -128,7 +128,7 @@ function BusinessSignup() {
     setAdmin({ fullName: '', email: '', password: '', confirmPassword: '', phone: '' });
 
     console.log("Business account created successfully!");
-    navigate('/dashboard');
+    navigate('/');
 
     return { success: true, user: user }; // Successful return
 

@@ -2,7 +2,16 @@ import React, { useState, useMemo, useEffect } from "react";
 import { ref, onValue, remove } from "firebase/database";
 import { db, auth } from "../../firebase.config";
 import { onAuthStateChanged } from 'firebase/auth';
-import { Trash2, Download } from "lucide-react";
+import { 
+  Trash2, 
+  Download, 
+  ShoppingCart, 
+  TrendingUp, 
+  Calendar, 
+  Filter, 
+  ArrowUpRight,
+  PackageCheck
+} from "lucide-react";
 
 export default function Sales() {
   const [sales, setSales] = useState([]);
@@ -12,13 +21,12 @@ export default function Sales() {
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
   const [timeFilter, setTimeFilter] = useState('week');
   const [productFilter, setProductFilter] = useState('all');
-  const [customDate, setCustomDate] = useState(''); // New State for Custom Date
-  const [filteredSales, setFilteredSales] = useState([]);
+  const [customDate, setCustomDate] = useState('');
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) setUser(currentUser);
-      else { setUser(null); setLoading(false); }
+    const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (!u) setLoading(false);
     });
     return () => unsubscribeAuth();
   }, []);
@@ -26,241 +34,214 @@ export default function Sales() {
   useEffect(() => {
     if (!user) return;
     const salesRef = ref(db, `businessData/${user.uid}/sales`);
-    const unsubscribeSales = onValue(salesRef, (snapshot) => {
+    const unsubscribe = onValue(salesRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-        const salesList = Object.keys(data).map(key => ({
-          id: key,
-          ...data[key]
-        }));
-        setSales(salesList);
-      } else setSales([]);
+      setSales(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
       setLoading(false);
     });
-    return () => unsubscribeSales();
+    return () => unsubscribe();
   }, [user]);
 
-  // Date Logic
-  const getDateRange = (period) => {
-    const today = new Date();
-    const formatDate = (d) => {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    };
-
-    if (period === 'custom' && customDate) {
-        return { start: customDate, end: customDate };
-    }
-
-    switch (period) {
-      case 'today': return { start: formatDate(today), end: formatDate(today) };
-      case 'week':
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay());
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        return { start: formatDate(startOfWeek), end: formatDate(endOfWeek) };
-      case 'month':
-        return { 
-            start: formatDate(new Date(today.getFullYear(), today.getMonth(), 1)), 
-            end: formatDate(new Date(today.getFullYear(), today.getMonth() + 1, 0)) 
-        };
-      default: return null;
-    }
-  };
-
-  const isDateInRange = (saleDate, range) => {
-    if (!range) return true;
-    const formattedSaleDate = saleDate.split('T')[0];
-    return formattedSaleDate >= range.start && formattedSaleDate <= range.end;
-  };
-
-  // Export Logic
-  const exportToCSV = () => {
-    if (filteredSales.length === 0) return alert("No data to export");
-    const headers = ["Date", "Product", "Quantity", "Total (₦)"];
-    const rows = filteredSales.map(s => [
-      s.date.split('T')[0],
-      s.productName,
-      s.quantity,
-      s.total
-    ]);
-
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + [headers, ...rows].map(e => e.join(",")).join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Sales_Report_${timeFilter}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleDeleteSale = async (saleId) => {
-    if (!user) return alert("Please log in.");
-    if (window.confirm("Delete this record?")) {
-      try {
-        await remove(ref(db, `businessData/${user.uid}/sales/${saleId}`));
-      } catch (err) { alert("Error: " + err.message); }
-    }
-  };
-
-  const uniqueProducts = useMemo(() => {
-    const products = new Set();
-    sales.forEach(sale => { if (sale.productName) products.add(sale.productName); });
-    return ['all', ...Array.from(products)];
-  }, [sales]);
-
-  useEffect(() => {
+  // Optimized Date Range Logic
+  const filteredSales = useMemo(() => {
     let result = [...sales];
-    if (timeFilter !== 'all') {
-      const range = getDateRange(timeFilter);
-      if (range) result = result.filter(sale => isDateInRange(sale.date, range));
-    }
-    if (productFilter !== 'all') {
-      result = result.filter(sale => sale.productName === productFilter);
-    }
-    setFilteredSales(result);
-  }, [sales, timeFilter, productFilter, customDate]);
+    const today = new Date();
+    const formatDate = (d) => d.toISOString().split('T')[0];
 
-  const sortedSales = useMemo(() => {
-    const sortedArray = [...filteredSales];
-    sortedArray.sort((a, b) => {
+    if (timeFilter !== 'all') {
+      let start, end = formatDate(today);
+      
+      if (timeFilter === 'today') start = end;
+      else if (timeFilter === 'custom') start = end = customDate;
+      else if (timeFilter === 'week') {
+        const d = new Date();
+        d.setDate(d.getDate() - 7);
+        start = formatDate(d);
+      } else if (timeFilter === 'month') {
+        const d = new Date();
+        d.setMonth(d.getMonth() - 1);
+        start = formatDate(d);
+      }
+
+      result = result.filter(s => {
+        const sDate = s.date.split('T')[0];
+        return sDate >= start && sDate <= end;
+      });
+    }
+
+    if (productFilter !== 'all') {
+      result = result.filter(s => s.productName === productFilter);
+    }
+
+    return result.sort((a, b) => {
       let aV = a[sortConfig.key]; let bV = b[sortConfig.key];
       if (sortConfig.key === 'date') { aV = new Date(aV); bV = new Date(bV); }
       return sortConfig.direction === 'asc' ? (aV > bV ? 1 : -1) : (aV < bV ? 1 : -1);
     });
-    return sortedArray;
-  }, [filteredSales, sortConfig]);
+  }, [sales, timeFilter, productFilter, customDate, sortConfig]);
 
-  const totalRevenue = filteredSales.reduce((acc, sale) => acc + (Number(sale.total) || 0), 0);
-  const totalItemsSold = filteredSales.reduce((acc, sale) => acc + (Number(sale.quantity) || 0), 0);
+  const uniqueProducts = ['all', ...new Set(sales.map(s => s.productName).filter(Boolean))];
+  const stats = {
+    revenue: filteredSales.reduce((acc, s) => acc + (Number(s.total) || 0), 0),
+    units: filteredSales.reduce((acc, s) => acc + (Number(s.quantity) || 0), 0),
+    avgTicket: filteredSales.length > 0 
+      ? filteredSales.reduce((acc, s) => acc + (Number(s.total) || 0), 0) / filteredSales.length 
+      : 0
+  };
+
+  const exportToCSV = () => {
+    if (filteredSales.length === 0) return;
+    const headers = ["Date", "Product", "Qty", "Total (₦)"];
+    const csv = [headers, ...filteredSales.map(s => [s.date.split('T')[0], s.productName, s.quantity, s.total])]
+      .map(r => r.join(",")).join("\n");
+    const link = document.createElement("a");
+    link.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
+    link.download = `Sales_${timeFilter}_${new Date().toLocaleDateString()}.csv`;
+    link.click();
+  };
 
   if (loading) return <SalesSkeleton />;
 
   return (
-    <div className="p-4 md:rounded-2xl md:p-6 bg-gray-50 min-h-screen space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="max-w-[1600px] mx-auto p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
+      
+      {/* Header Area */}
+      <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-100 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Sales Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Real-time transaction tracking</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Sales Analytics</h1>
+          <p className="text-sm text-slate-500 font-medium">Monitor revenue flow and product performance</p>
         </div>
         <button 
           onClick={exportToCSV}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-all shadow-md active:scale-95"
         >
-          <Download size={16} />
-          Export CSV
+          <Download size={16} /> Export CSV
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <StatCard label="Total Revenue" value={`₦${totalRevenue.toLocaleString()}`} subtext={timeFilter} color="blue" />
-        <StatCard label="Items Sold" value={totalItemsSold} subtext={`${filteredSales.length} Transactions`} color="green" />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <SaleStat label="Gross Revenue" value={`₦${stats.revenue.toLocaleString()}`} icon={<TrendingUp size={18}/>} color="emerald" sub={`Reflecting ${timeFilter}`} />
+        <SaleStat label="Units Moved" value={stats.units} icon={<PackageCheck size={18}/>} color="blue" sub="Total items sold" />
+        <SaleStat label="Avg. Order Value" value={`₦${Math.round(stats.avgTicket).toLocaleString()}`} icon={<ArrowUpRight size={18}/>} color="slate" sub="Revenue per checkout" />
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Time Period</label>
-            <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-100 rounded-lg px-3 outline-none text-sm focus:ring-2 focus:ring-blue-500">
-                <option value="today">Today</option>
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-                <option value="custom">Pick Specific Date</option>
-                <option value="all">All Time</option>
-            </select>
-          </div>
+      {/* Control Bar */}
+      <div className="bg-white rounded-2xl p-4 shadow-sm flex flex-wrap items-center gap-6">
+        <div className="flex items-center gap-2 text-slate-400">
+          <Filter size={16} />
+          <span className="text-[10px] font-bold uppercase tracking-widest">Sort & Filter</span>
+        </div>
 
-          {timeFilter === 'custom' && (
-            <div className="space-y-1 animate-in fade-in slide-in-from-top-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Select Date</label>
-                <input 
-                    type="date" 
-                    value={customDate} 
-                    onChange={(e) => setCustomDate(e.target.value)}
-                    className="w-full h-10 bg-gray-50 border border-gray-100 rounded-lg px-3 outline-none text-sm focus:ring-2 focus:ring-blue-500"
-                />
-            </div>
-          )}
+        <div className="flex items-center gap-3">
+          <Calendar size={14} className="text-slate-400" />
+          <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="text-sm font-bold text-slate-700 outline-none bg-transparent cursor-pointer">
+            <option value="today">Today</option>
+            <option value="week">Past 7 Days</option>
+            <option value="month">Past 30 Days</option>
+            <option value="custom">Custom Date</option>
+            <option value="all">Lifetime</option>
+          </select>
+        </div>
 
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Filter Product</label>
-            <select value={productFilter} onChange={(e) => setProductFilter(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-100 rounded-lg px-3 outline-none text-sm focus:ring-2 focus:ring-blue-500">
-                {uniqueProducts.map(p => <option key={p} value={p}>{p === 'all' ? 'All Products' : p}</option>)}
-            </select>
-          </div>
+        {timeFilter === 'custom' && (
+          <input 
+            type="date" 
+            value={customDate} 
+            onChange={(e) => setCustomDate(e.target.value)}
+            className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md outline-none animate-in fade-in"
+          />
+        )}
+
+        <div className="flex items-center gap-3">
+          <ShoppingCart size={14} className="text-slate-400" />
+          <select value={productFilter} onChange={(e) => setProductFilter(e.target.value)} className="text-sm font-bold text-slate-700 outline-none bg-transparent cursor-pointer">
+            {uniqueProducts.map(p => <option key={p} value={p}>{p === 'all' ? 'All Products' : p}</option>)}
+          </select>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Sales Table */}
+      <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-100">
-            <thead className="bg-gray-50">
-                <tr>
-                <th className="px-6 py-4 text-left text-[11px] font-bold uppercase text-gray-400 tracking-wider">Product Item</th>
-                <th className="px-6 py-4 text-left text-[11px] font-bold uppercase text-gray-400 tracking-wider">Qty Sold</th>
-                <th className="px-6 py-4 text-left text-[11px] font-bold uppercase text-gray-400 tracking-wider">Total Sale(₦)</th>
-                <th className="px-6 py-4 text-left text-[11px] font-bold uppercase text-gray-400 tracking-wider">Date</th>
-                <th className="px-6 py-4"></th>
-                </tr>
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-100">
+                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaction Ref</th>
+                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Product Description</th>
+                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Quantity</th>
+                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Amount</th>
+                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Date</th>
+                <th className="px-8 py-4"></th>
+              </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
-                {sortedSales.map((sale) => (
-                <tr key={sale.id} className="hover:bg-blue-50/30 transition-colors">
-                    <td className="px-6 py-4 font-semibold text-gray-800 text-sm">{sale.productName}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{sale.quantity} units</td>
-                    <td className="px-6 py-4 font-bold text-blue-600 text-sm">{Number(sale.total).toLocaleString()}</td>
-                    <td className="px-6 py-4 text-xs text-gray-500 font-medium">{sale.date.split('T')[0]}</td>
-                    <td className="px-6 py-4 text-right">
-                        <button onClick={() => handleDeleteSale(sale.id)} className="text-gray-300 hover:text-red-500 transition-colors p-2">
-                            <Trash2 size={16}/>
-                        </button>
-                    </td>
+            <tbody className="divide-y divide-slate-50">
+              {filteredSales.map((sale) => (
+                <tr key={sale.id} className="group hover:bg-slate-50/50 transition-all">
+                  <td className="px-8 py-5 text-xs font-mono text-slate-400">#TXN-{sale.id.slice(-6).toUpperCase()}</td>
+                  <td className="px-8 py-5">
+                    <div className="text-sm font-bold text-slate-900">{sale.productName}</div>
+                    <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-tight">Verified Sale</div>
+                  </td>
+                  <td className="px-8 py-5 text-center">
+                    <span className="text-xs font-black text-slate-600 bg-slate-100 px-2 py-1 rounded-md">{sale.quantity} units</span>
+                  </td>
+                  <td className="px-8 py-5">
+                    <span className="text-sm font-black text-slate-900">₦{Number(sale.total).toLocaleString()}</span>
+                  </td>
+                  <td className="px-8 py-5 text-right text-xs font-bold text-slate-400">
+                    {new Date(sale.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </td>
+                  <td className="px-8 py-5 text-right">
+                    <button 
+                      onClick={() => remove(ref(db, `businessData/${user.uid}/sales/${sale.id}`))}
+                      className="p-2 text-slate-200 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
                 </tr>
-                ))}
+              ))}
             </tbody>
-            </table>
+          </table>
         </div>
-        {sortedSales.length === 0 && (
-            <div className="p-12 text-center text-gray-400 text-sm">No sales found for this period.</div>
+        {filteredSales.length === 0 && (
+          <div className="py-24 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-50 text-slate-200 mb-4">
+              <ShoppingCart size={32} />
+            </div>
+            <p className="text-sm font-bold text-slate-400 tracking-tight">No sales records found for this criteria.</p>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, subtext, color }) {
-  const colorMap = {
-    blue: "text-blue-600 border-blue-50 bg-blue-50/30",
-    green: "text-green-600 border-green-50 bg-green-50/30"
+function SaleStat({ label, value, icon, color, sub }) {
+  const themes = {
+    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    blue: "bg-blue-50 text-blue-600 border-blue-100",
+    slate: "bg-slate-50 text-slate-600 border-slate-100"
   };
   return (
-    <div className={`p-5 rounded-xl border ${colorMap[color]} shadow-sm`}>
-      <p className="text-[11px] uppercase font-bold opacity-70 tracking-wider">{label}</p>
-      <p className="text-2xl font-bold text-gray-800 mt-1">{value}</p>
-      <p className="text-[10px] text-gray-400 font-medium mt-1 uppercase italic">Filtering: {subtext}</p>
+    <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all">
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border mb-4 ${themes[color]}`}>{icon}</div>
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+      <h3 className="text-2xl font-black text-slate-900 mt-1">{value}</h3>
+      <p className="text-[11px] font-bold text-slate-400 mt-1">{sub}</p>
     </div>
   );
 }
 
 function SalesSkeleton() {
   return (
-    <div className="p-4 md:p-6 bg-gray-50 min-h-screen space-y-6 animate-pulse">
-      <div className="h-10 w-48 bg-gray-200 rounded-lg"></div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="h-28 bg-white rounded-xl border border-gray-100"></div>
-        <div className="h-28 bg-white rounded-xl border border-gray-100"></div>
+    <div className="p-6 space-y-8 animate-pulse bg-white min-h-screen">
+      <div className="h-10 w-48 bg-slate-50 rounded-xl"></div>
+      <div className="grid grid-cols-3 gap-6">
+        {[1,2,3].map(i => <div key={i} className="h-36 bg-slate-50 rounded-3xl border border-slate-100"></div>)}
       </div>
-      <div className="h-64 bg-white rounded-xl border border-gray-100"></div>
+      <div className="h-96 bg-slate-50 rounded-3xl border border-slate-100"></div>
     </div>
   );
 }

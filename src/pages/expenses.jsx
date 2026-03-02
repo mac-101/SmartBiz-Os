@@ -2,7 +2,16 @@ import React, { useState, useEffect, useMemo } from "react";
 import { ref, onValue, remove } from "firebase/database";
 import { db, auth } from "../../firebase.config";
 import { onAuthStateChanged } from 'firebase/auth';
-import { MinusIcon, Trash2, Download, RotateCcw } from "lucide-react";
+import { 
+  Trash2, 
+  Download, 
+  RotateCcw, 
+  Receipt, 
+  TrendingDown, 
+  Filter,
+  Calendar as CalendarIcon,
+  ChevronRight
+} from "lucide-react";
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState([]);
@@ -13,264 +22,275 @@ export default function Expenses() {
   const [timeFilter, setTimeFilter] = useState('month'); 
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState('');
-  const [filteredExpenses, setFilteredExpenses] = useState([]);
 
-  // 1. Auth Listener
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (!currentUser) setLoading(false);
+    const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (!u) setLoading(false);
     });
     return () => unsubscribeAuth();
   }, []);
 
-  // 2. Fetch Expenses
   useEffect(() => {
     if (!user) return;
     const expenseRef = ref(db, `businessData/${user.uid}/expenses`);
-    const unsubscribeExpenses = onValue(expenseRef, (snapshot) => {
+    const unsubscribe = onValue(expenseRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-        const list = Object.keys(data).map(key => ({
-          id: key,
-          ...data[key]
-        }));
-        setExpenses(list);
-      } else {
-        setExpenses([]);
-      }
+      setExpenses(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
       setLoading(false);
     });
-    return () => unsubscribeExpenses();
+    return () => unsubscribe();
   }, [user]);
 
-  // Handle Deletion
-  const handleDelete = async (id) => {
-    if (window.confirm("Delete this expense record?")) {
-      try {
-        await remove(ref(db, `businessData/${user.uid}/expenses/${id}`));
-      } catch (err) {
-        alert("Failed to delete: " + err.message);
-      }
-    }
-  };
-
-  // Export to CSV
-  const handleExport = () => {
-    if (filteredExpenses.length === 0) return alert("No data to export");
-    const headers = ["Date", "Category", "Description", "Amount (₦)"];
-    const rows = filteredExpenses.map(exp => [
-      exp.date,
-      exp.category,
-      exp.description || "N/A",
-      exp.amount
-    ]);
-
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + [headers, ...rows].map(e => e.join(",")).join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Expenses_${timeFilter}_${new Date().toLocaleDateString()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const getCurrentDate = () => new Date().toISOString().split('T')[0];
-
-  // 3. Filtering & Sorting Logic
-  useEffect(() => {
+  const filteredExpenses = useMemo(() => {
     let result = [...expenses];
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Time Filtering
     if (timeFilter !== 'all') {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const now = new Date();
       if (timeFilter === 'today') {
-        result = result.filter(exp => exp.date === getCurrentDate());
+        result = result.filter(exp => exp.date === todayStr);
       } else if (timeFilter === 'custom' && selectedDate) {
         result = result.filter(exp => exp.date === selectedDate);
-      } else if (timeFilter !== 'custom') {
-        const rangeDate = new Date();
-        if (timeFilter === 'week') rangeDate.setDate(today.getDate() - 7);
-        if (timeFilter === 'month') rangeDate.setMonth(today.getMonth() - 1);
-        if (timeFilter === 'year') rangeDate.setFullYear(today.getFullYear() - 1);
-        const compareStr = rangeDate.toISOString().split('T')[0];
-        result = result.filter(exp => exp.date >= compareStr);
+      } else {
+        const cutoff = new Date();
+        if (timeFilter === 'week') cutoff.setDate(now.getDate() - 7);
+        if (timeFilter === 'month') cutoff.setMonth(now.getMonth() - 1);
+        if (timeFilter === 'year') cutoff.setFullYear(now.getFullYear() - 1);
+        result = result.filter(exp => new Date(exp.date) >= cutoff);
       }
     }
+
+    // Category Filtering
     if (categoryFilter !== 'all') {
       result = result.filter(exp => exp.category === categoryFilter);
     }
-    switch (sortOrder) {
-      case 'newest': result.sort((a, b) => new Date(b.date) - new Date(a.date)); break;
-      case 'oldest': result.sort((a, b) => new Date(a.date) - new Date(b.date)); break;
-      case 'highest': result.sort((a, b) => b.amount - a.amount); break;
-      case 'lowest': result.sort((a, b) => a.amount - b.amount); break;
-      default: break;
-    }
-    setFilteredExpenses(result);
+
+    // Sorting
+    return result.sort((a, b) => {
+      if (sortOrder === 'newest') return new Date(b.date) - new Date(a.date);
+      if (sortOrder === 'oldest') return new Date(a.date) - new Date(b.date);
+      if (sortOrder === 'highest') return Number(b.amount) - Number(a.amount);
+      return Number(a.amount) - Number(b.amount);
+    });
   }, [expenses, sortOrder, timeFilter, categoryFilter, selectedDate]);
 
-  const totalExpenses = filteredExpenses.reduce((acc, exp) => acc + Number(exp.amount), 0);
-  const highestExpense = filteredExpenses.length > 0 ? Math.max(...filteredExpenses.map(e => e.amount)) : 0;
-  const averageExpense = filteredExpenses.length > 0 ? totalExpenses / filteredExpenses.length : 0;
+  const handleDelete = async (id) => {
+    if (confirm("Delete this expense record? This cannot be undone.")) {
+      await remove(ref(db, `businessData/${user.uid}/expenses/${id}`));
+    }
+  };
+
+  const handleExport = () => {
+    if (filteredExpenses.length === 0) return;
+    const headers = ["Date", "Category", "Description", "Amount (₦)"];
+    const csv = [headers, ...filteredExpenses.map(e => [e.date, e.category, e.description || "", e.amount])]
+      .map(row => row.join(",")).join("\n");
+    
+    const link = document.createElement("a");
+    link.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
+    link.download = `Expenses_Report_${new Date().toLocaleDateString()}.csv`;
+    link.click();
+  };
+
   const categories = ['all', ...new Set(expenses.map(e => e.category))];
+  const stats = {
+    total: filteredExpenses.reduce((acc, exp) => acc + Number(exp.amount), 0),
+    count: filteredExpenses.length,
+    highest: filteredExpenses.length > 0 ? Math.max(...filteredExpenses.map(e => e.amount)) : 0
+  };
 
   if (loading) return <ExpensesSkeleton />;
 
   return (
-    <div className="p-4 md:p-6 min-h-screen bg-gray-50 rounded-2xl space-y-6">
+    <div className="max-w-[1600px] mx-auto p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
+      
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-100 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Expenses Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Track and manage all business expenditures</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Expense Ledger</h1>
+          <p className="text-sm text-slate-500 font-medium">Internal expenditure and overhead tracking</p>
         </div>
         <button 
           onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+          className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-sm active:scale-95"
         >
-          <Download size={16} />
-          Export CSV
+          <Download size={16} /> Export Report
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard label="Total Expenses" value={totalExpenses} color="red" subtext={timeFilter === 'all' ? 'Lifetime' : timeFilter} />
-        <StatCard label="Highest Expense" value={highestExpense} color="orange" subtext="Peak Transaction" />
-        <StatCard label="Average" value={averageExpense} color="amber" subtext={`Per ${filteredExpenses.length} entries`} />
+      {/* Analytics Tiles */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <ExpenseStat 
+           label="Total Spend" 
+           value={stats.total} 
+           icon={<TrendingDown size={18}/>} 
+           subtext={`Across ${stats.count} transactions`} 
+           color="rose"
+        />
+        <ExpenseStat 
+           label="Largest Outflow" 
+           value={stats.highest} 
+           icon={<Receipt size={18}/>} 
+           subtext="Single highest entry" 
+           color="slate"
+        />
+        <ExpenseStat 
+           label="Daily Average" 
+           value={stats.total / (timeFilter === 'week' ? 7 : 30)} 
+           icon={<CalendarIcon size={18}/>} 
+           subtext="Estimated burn rate" 
+           color="blue"
+        />
       </div>
 
-      {/* Controls */}
-      <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Time Period</label>
-            <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-100 rounded-lg px-3 outline-none text-sm focus:ring-2 focus:ring-red-500">
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">Last 7 Days</option>
-              <option value="month">Last 30 Days</option>
-              <option value="year">Last Year</option>
-              <option value="custom">Pick Specific Date</option>
-            </select>
-          </div>
-
-          {timeFilter === 'custom' && (
-            <div className="space-y-1 animate-in fade-in slide-in-from-top-1">
-              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Select Date</label>
-              <input 
-                type="date" 
-                value={selectedDate} 
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full h-10 bg-gray-50 border border-gray-100 rounded-lg px-3 outline-none text-sm focus:ring-2 focus:ring-red-500"
-              />
-            </div>
-          )}
-
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Category</label>
-            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-100 rounded-lg px-3 outline-none text-sm focus:ring-2 focus:ring-red-500">
-              {categories.map(cat => <option key={cat} value={cat}>{cat === 'all' ? 'All Categories' : cat}</option>)}
-            </select>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Sort By</label>
-            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-100 rounded-lg px-3 outline-none text-sm focus:ring-2 focus:ring-red-500">
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="highest">Highest Amount</option>
-              <option value="lowest">Lowest Amount</option>
-            </select>
-          </div>
-
-          <div className="lg:col-span-1 flex items-end">
-            <button 
-              onClick={() => { setTimeFilter('month'); setCategoryFilter('all'); setSortOrder('newest'); setSelectedDate(''); }} 
-              className="flex items-center justify-center gap-2 w-full h-10 border border-gray-200 rounded-lg text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors"
-            >
-              <RotateCcw size={14} />
-              Reset Filters
-            </button>
-          </div>
+      {/* Filter Bar */}
+      <div className="bg-white  rounded-2xl p-4 shadow-sm flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg text-slate-400">
+          <Filter size={14} />
+          <span className="text-[10px] font-bold uppercase tracking-widest">Filters</span>
         </div>
+
+        <select 
+          value={timeFilter} 
+          onChange={(e) => setTimeFilter(e.target.value)} 
+          className="bg-transparent text-sm font-bold text-slate-600 outline-none border-r border-slate-100 pr-4"
+        >
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">Past 7 Days</option>
+          <option value="month">Past 30 Days</option>
+          <option value="custom">Custom Date</option>
+        </select>
+
+        {timeFilter === 'custom' && (
+          <input 
+            type="date" 
+            value={selectedDate} 
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md outline-none"
+          />
+        )}
+
+        <select 
+          value={categoryFilter} 
+          onChange={(e) => setCategoryFilter(e.target.value)} 
+          className="bg-transparent text-sm font-bold text-slate-600 outline-none border-r border-slate-100 pr-4"
+        >
+          {categories.map(cat => <option key={cat} value={cat}>{cat === 'all' ? 'All Categories' : cat.toUpperCase()}</option>)}
+        </select>
+
+        <select 
+          value={sortOrder} 
+          onChange={(e) => setSortOrder(e.target.value)} 
+          className="bg-transparent text-sm font-bold text-slate-600 outline-none"
+        >
+          <option value="newest">Newest First</option>
+          <option value="highest">Highest Amount</option>
+          <option value="lowest">Lowest Amount</option>
+        </select>
+
+        <button 
+          onClick={() => { setTimeFilter('month'); setCategoryFilter('all'); setSortOrder('newest'); }}
+          className="ml-auto p-2 text-slate-400 hover:text-slate-600 transition-colors"
+          title="Reset Filters"
+        >
+          <RotateCcw size={16} />
+        </button>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+      {/* Ledger Table */}
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-100">
-            <thead className="bg-gray-50">
+          <table className="w-full text-left">
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-100">
+              <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Transaction ID</th>
+              <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Category</th>
+              <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Description</th>
+              <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Amount</th>
+              <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right">Date</th>
+              <th className="px-8 py-4"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {filteredExpenses.length > 0 ? (
+              filteredExpenses.map((exp) => (
+                <tr key={exp.id} className="group hover:bg-slate-50 transition-colors">
+                  <td className="px-8 py-5">
+                    <span className="text-xs font-mono text-slate-300">#{exp.id.slice(-6).toUpperCase()}</span>
+                  </td>
+                  <td className="px-8 py-5">
+                    <span className="text-[10px] font-black px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg uppercase tracking-tight">
+                      {exp.category}
+                    </span>
+                  </td>
+                  <td className="px-8 py-5 text-sm font-semibold text-slate-700">
+                    {exp.description || <span className="text-slate-300 italic">No description</span>}
+                  </td>
+                  <td className="px-8 py-5">
+                    <span className="text-sm font-black text-rose-600">₦{Number(exp.amount).toLocaleString()}</span>
+                  </td>
+                  <td className="px-8 py-5 text-right text-xs font-bold text-slate-400">
+                    {new Date(exp.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </td>
+                  <td className="px-8 py-5 text-right">
+                    <button 
+                      onClick={() => handleDelete(exp.id)} 
+                      className="p-2 text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
               <tr>
-                <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Ref ID</th>
-                <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Description</th>
-                <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Amount(₦)</th>
-                <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-4"></th>
+                <td colSpan="6" className="py-24 text-center">
+                  <div className="flex flex-col items-center gap-2 opacity-20">
+                    <Receipt size={48} />
+                    <p className="text-sm font-bold">No expenditures found for this period</p>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filteredExpenses.length > 0 ? (
-                filteredExpenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-red-50/20 transition-colors">
-                    <td className="px-6 py-4 text-xs font-mono text-gray-400">#{expense.id.slice(-6).toUpperCase()}</td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-tight">{expense.category}</span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">{expense.description || "—"}</td>
-                    <td className="px-6 py-4 font-bold text-red-600 text-sm">
-                      <div className="flex items-center">
-                        {Number(expense.amount).toLocaleString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-gray-500 font-medium">{expense.date}</td>
-                    <td className="px-6 py-4 text-right">
-                      <button onClick={() => handleDelete(expense.id)} className="text-gray-300 hover:text-red-500 transition-colors p-2">
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr><td colSpan="6" className="px-6 py-20 text-center text-gray-400 text-sm font-medium">No expense records found.</td></tr>
-              )}
-            </tbody>
-          </table>
+            )}
+          </tbody>
+        </table>
         </div>
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, color, subtext }) {
-  const colors = {
-    red: "border-red-50 text-red-600 bg-red-50/30",
-    orange: "border-orange-50 text-orange-600 bg-orange-50/30",
-    amber: "border-amber-50 text-amber-600 bg-amber-50/30"
+function ExpenseStat({ label, value, icon, subtext, color }) {
+  const themes = {
+    rose: "bg-rose-50 text-rose-600 border-rose-100",
+    slate: "bg-slate-50 text-slate-600 border-slate-100",
+    blue: "bg-blue-50 text-blue-600 border-blue-100"
   };
+
   return (
-    <div className={`border p-5 rounded-xl shadow-sm ${colors[color]}`}>
-      <p className="text-[11px] uppercase font-bold opacity-70 tracking-wider">{label}</p>
-      <p className="text-2xl font-bold text-gray-800 mt-1">₦{Number(value).toLocaleString()}</p>
-      <p className="text-[10px] text-gray-400 font-medium mt-1 uppercase italic">{subtext}</p>
+    <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm transition-transform hover:scale-[1.01]">
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-3 rounded-2xl border ${themes[color]}`}>{icon}</div>
+        <ChevronRight size={16} className="text-slate-200" />
+      </div>
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+      <h3 className="text-2xl font-black text-slate-900 mt-1">₦{Number(value || 0).toLocaleString()}</h3>
+      <p className="text-[11px] font-bold text-slate-400 mt-1">{subtext}</p>
     </div>
   );
 }
 
 function ExpensesSkeleton() {
   return (
-    <div className="p-4 md:p-6 min-h-screen bg-gray-50 rounded-2xl space-y-6 animate-pulse">
-      <div className="h-8 w-64 bg-gray-200 rounded-lg"></div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-28 bg-white rounded-xl border border-gray-100"></div>
-        ))}
+    <div className="p-6 space-y-8 animate-pulse bg-white min-h-screen">
+      <div className="h-10 w-48 bg-slate-50 rounded-xl"></div>
+      <div className="grid grid-cols-3 gap-6">
+        {[1,2,3].map(i => <div key={i} className="h-36 bg-slate-50 rounded-3xl border border-slate-100"></div>)}
       </div>
-      <div className="h-64 bg-white rounded-xl border border-gray-100"></div>
+      <div className="h-96 bg-slate-50 rounded-3xl border border-slate-100"></div>
     </div>
   );
 }

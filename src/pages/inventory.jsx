@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { ref, onValue, remove, update } from "firebase/database";
 import { db, auth } from "../../firebase.config";
-import { 
-  X, 
-  Plus, 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  Trash2, 
+import {
+  X,
+  Plus,
+  Search,
+  Filter,
+  MoreVertical,
+  Trash2,
   ArrowUpDown,
   Package,
   DollarSign,
@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { onAuthStateChanged } from 'firebase/auth';
 import InventoryForm from "../forms/inventoryForm";
+import UpdateStock from "../forms/updateStock";
+
 
 export default function Inventory() {
   const [products, setProducts] = useState([]);
@@ -24,7 +26,11 @@ export default function Inventory() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortBy, setSortBy] = useState("name");
   const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [formMode, setFormMode] = useState(null);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
@@ -84,15 +90,18 @@ export default function Inventory() {
 
   return (
     <div className="max-w-[1600px] mx-auto p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
-      
+
       {/* 1. Header Area */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-100 pb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Inventory Stock</h1>
           <p className="text-sm text-slate-500 font-medium">Manage SKUs, reorder levels, and valuation</p>
         </div>
-        <button 
-          onClick={() => setShowUpdateForm(true)}
+        <button
+          onClick={() => {
+            setShowUpdateForm(true);
+            setFormMode("add");
+          }}
           className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all active:scale-95"
         >
           <Plus size={18} /> Add Product
@@ -101,19 +110,19 @@ export default function Inventory() {
 
       {/* 2. Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <MetricTile label="Total Units" val={stats.totalItems} icon={<Package size={18}/>} color="blue" />
-        <MetricTile label="Inventory Value" val={`₦${stats.totalValue.toLocaleString()}`} icon={<DollarSign size={18}/>} color="slate" />
-        <MetricTile label="Low Stock" val={stats.lowStock} icon={<AlertTriangle size={18}/>} color="amber" />
-        <MetricTile label="Stockouts" val={stats.outOfStock} icon={<TrendingUp size={18}/>} color="rose" />
+        <MetricTile label="Total Units" val={stats.totalItems} icon={<Package size={18} />} color="blue" />
+        <MetricTile label="Inventory Value" val={`₦${stats.totalValue.toLocaleString()}`} icon={<DollarSign size={18} />} color="slate" />
+        <MetricTile label="Low Stock" val={stats.lowStock} icon={<AlertTriangle size={18} />} color="amber" />
+        <MetricTile label="Stockouts" val={stats.outOfStock} icon={<TrendingUp size={18} />} color="rose" />
       </div>
 
       {/* 3. Toolbar */}
       <div className="bg-white  rounded-2xl p-4 flex flex-col md:flex-row justify-between gap-4 shadow-sm">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input 
-            type="text" 
-            placeholder="Search products by name..." 
+          <input
+            type="text"
+            placeholder="Search products by name..."
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -123,16 +132,16 @@ export default function Inventory() {
           <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
             <Filter size={14} /> Filter
           </div>
-          <select 
+          <select
             className="text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg px-3 py-2 outline-none"
-            value={selectedCategory} 
+            value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
           >
             {stats.categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select 
+          <select
             className="text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg px-3 py-2 outline-none"
-            value={sortBy} 
+            value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
           >
             <option value="name">Sort by: Name</option>
@@ -161,7 +170,7 @@ export default function Inventory() {
                 const cost = Number(p.cost) || 0;
                 const price = Number(p.price) || 0;
                 const reorder = Number(p.reorderLevel) || 5;
-                
+
                 const isOutOfStock = qty <= 0;
                 const isLow = qty < reorder && !isOutOfStock;
 
@@ -191,15 +200,39 @@ export default function Inventory() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-bold text-slate-900">₦{(qty * cost).toLocaleString()}</div>
-                      <div className="text-[10px] font-bold text-emerald-500">POTENTIAL PROFIT: ₦{(qty * (price - cost)).toLocaleString()}</div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        {/* <button className="p-2 text-slate-300 hover:text-slate-600 transition-colors"><MoreVertical size={16}/></button> */}
-                        <button onClick={() => handleDelete(p.firebaseKey)} className="p-2 text-slate-300 hover:text-rose-500 transition-colors">
-                          <Trash2 size={16} />
-                        </button>
+                      <div className={`text-[10px] font-bold ${qty * (price - cost) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {qty * (price - cost) >= 0 ? 'POTENTIAL PROFIT' : 'POTENTIAL LOSS'}: ₦{Math.abs(qty * (price - cost)).toLocaleString()}
                       </div>
+                    </td>
+                    <td className="px-6 relative py-4 text-right">
+                      <button
+                        onClick={() =>
+                          setActiveDropdown(
+                            activeDropdown === p.firebaseKey ? null : p.firebaseKey
+                          )
+                        }
+                        className="p-2 text-slate-300 hover:text-slate-600 transition-colors"
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+
+                      {activeDropdown === p.firebaseKey && (
+                        <div className="absolute right-6 top-12 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-32 z-10">
+                          <button
+                            onClick={() => {
+                              setShowUpdateForm(true);
+                              setSelectedProduct(p);
+                              setFormMode("edit");
+                              setActiveDropdown(null);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+                          >
+                            Edit
+                          </button>
+                          <button onClick={() => handleDelete(p.firebaseKey)} className="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50">Delete</button>
+                        </div>
+                      )}
+
                     </td>
                   </tr>
                 );
@@ -214,13 +247,23 @@ export default function Inventory() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowUpdateForm(false)} />
           <div className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h2 className="text-xl font-bold text-slate-900">Add New Inventory Item</h2>
-              <button onClick={() => setShowUpdateForm(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={20}/></button>
-            </div>
-            <div className=" overflow-y-auto custom-scrollbar">
-              <InventoryForm onSuccess={() => setShowUpdateForm(false)} />
-            </div>
+            <button onClick={() => setShowUpdateForm(null)} className="p-2 w-fit absolute top-4 right-4 hover:bg-slate-200 rounded-full transition-colors"><X size={20} /></button>
+
+            {formMode && (
+              <div className="overflow-y-auto custom-scrollbar">
+                {formMode === "add" && (
+                  <InventoryForm onSuccess={() => setFormMode(null)} />
+                )}
+
+                {formMode === "edit" && (
+                  <UpdateStock
+                    onClose={() => setFormMode(null)}
+                    mode="edit"
+                    product={selectedProduct}
+                  />
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -251,7 +294,7 @@ function InventorySkeleton() {
     <div className="p-6 space-y-8 animate-pulse bg-white min-h-screen">
       <div className="h-10 w-48 bg-slate-100 rounded-lg"></div>
       <div className="grid grid-cols-4 gap-6">
-        {[1,2,3,4].map(i => <div key={i} className="h-24 bg-slate-50 rounded-2xl border border-slate-100"></div>)}
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-slate-50 rounded-2xl border border-slate-100"></div>)}
       </div>
       <div className="h-96 bg-slate-50 rounded-2xl border border-slate-100"></div>
     </div>

@@ -127,7 +127,7 @@ export function AppLayout() {
                         </button>
                         <div className="p-1">
                             {formType === "sale" && <SaleForm onClose={closeForm} />}
-                            {formType === "inventory" && <UpdateStock close={closeForm} />}
+                            {formType === "inventory" && <UpdateStock onClose={closeForm} mode="restock" /> }
                             {formType === "expense" && <ExpenseForm onClose={closeForm} />}
                         </div>
                     </div>

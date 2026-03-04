@@ -14,6 +14,7 @@ import Expenses from '../pages/expenses.jsx';
 import Sales from '../pages/sales.jsx';
 import Profile from '../pages/profile.jsx';
 import Dashboard from '../pages/dashboard.jsx';
+import ViewStaff from "../pages/staff.jsx";
 
 export function AppLayout() {
     const [activeTab, setActiveTab] = useState("dashboard");
@@ -30,6 +31,7 @@ export function AppLayout() {
         inventory: <Inventory />,
         assistant: <div className="p-8 font-bold text-gray-400 text-center">AI Assistant arriving soon...</div>,
         profile: <Profile />,
+        Team: <ViewStaff onAddClick={() => {}} />,
     };
 
     const handleSidebarItemClick = (tabId) => {

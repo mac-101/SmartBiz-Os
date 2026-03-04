@@ -118,6 +118,7 @@ function BusinessSignup() {
       country: business.country,
       state: business.state,
       ownerName: admin.fullName,
+      role: "manager",
       adminEmail: admin.email,
       website: business.website,
       createdAt: new Date().toISOString()
@@ -248,47 +249,6 @@ function BusinessSignup() {
                 </div>
 
               </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-              
 
               {/* Business Preview */}
               <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">

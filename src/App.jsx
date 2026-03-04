@@ -6,6 +6,7 @@ import BusinessSignup from './forms/signUp.jsx';
 import BusinessLogin from './forms/login.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import FirstTimeWrapper from './firstTimeWrapper.jsx';
+import StaffSignup from './pages/staffSignUp.jsx';
 
 function AppContent() {
   return (
@@ -21,7 +22,7 @@ function AppContent() {
           <Route path="/signUp" element={<BusinessSignup />} />
           <Route path="/landingPage" element={<LandingPage />} />
           <Route path="/login" element={<BusinessLogin />} />
-          
+          <Route path="/staff-signup" element={<StaffSignup />} />
         </Routes>
       </FirstTimeWrapper>
     </Router>

@@ -27,6 +27,7 @@ const NAVIGATION = [
         group: "Intelligence",
         items: [
             { id: "assistant", label: "Smart Assistant", icon: Sparkles },
+            { id: "Team", label: "Team Management", icon: User },
         ]
     }
 ];

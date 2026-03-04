@@ -8,7 +8,7 @@ import {
   Filter,
   MoreVertical,
   Trash2,
-  ArrowUpDown,
+  Tag,
   Package,
   DollarSign,
   AlertTriangle,
@@ -17,6 +17,7 @@ import {
 import { onAuthStateChanged } from 'firebase/auth';
 import InventoryForm from "../forms/inventoryForm";
 import UpdateStock from "../forms/updateStock";
+import BarcodePrinter from "./barcode";
 
 
 export default function Inventory() {
@@ -26,7 +27,7 @@ export default function Inventory() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortBy, setSortBy] = useState("name");
   const [showUpdateForm, setShowUpdateForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
+  const [showBarcodePrinter, setShowBarcodePrinter] = useState(false );
   const [searchTerm, setSearchTerm] = useState("");
   const [formMode, setFormMode] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -89,7 +90,10 @@ export default function Inventory() {
   if (loading) return <InventorySkeleton />;
 
   return (
-    <div className="max-w-[1600px] mx-auto p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
+    <>
+
+    {!showBarcodePrinter ? (
+      <div className="max-w-[1600px] mx-auto p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
 
       {/* 1. Header Area */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-100 pb-6">
@@ -97,7 +101,8 @@ export default function Inventory() {
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Inventory Stock</h1>
           <p className="text-sm text-slate-500 font-medium">Manage SKUs, reorder levels, and valuation</p>
         </div>
-        <button
+        <div className="flex items-center gap-3">
+          <button
           onClick={() => {
             setShowUpdateForm(true);
             setFormMode("add");
@@ -106,6 +111,13 @@ export default function Inventory() {
         >
           <Plus size={18} /> Add Product
         </button>
+        <button
+          onClick={() => setShowBarcodePrinter(true)}
+          className="bg-black hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all active:scale-95"
+        >
+          <Tag size={18} /> Print Barcodes
+        </button>
+        </div>
       </div>
 
       {/* 2. Key Metrics */}
@@ -252,7 +264,7 @@ export default function Inventory() {
             {formMode && (
               <div className="overflow-y-auto custom-scrollbar">
                 {formMode === "add" && (
-                  <InventoryForm onSuccess={() => setFormMode(null)} />
+                  <InventoryForm onSuccess={() => {setFormMode(null), setShowUpdateForm(false)}} />
                 )}
 
                 {formMode === "edit" && (
@@ -267,8 +279,14 @@ export default function Inventory() {
           </div>
         </div>
       )}
-    </div>
+    </div>) : (
+      <BarcodePrinter onClose={() => setShowBarcodePrinter(false)} products={products} />
+    )}
+    
+    </>
   );
+
+  
 }
 
 function MetricTile({ label, val, icon, color }) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ref, set } from 'firebase/database';
-import { db, auth } from '../../firebase.config'; 
+import { db, auth } from '../../firebase.config';
 
 function InventoryForm({ onSuccess, product = null }) {
   // Initialize with either the selected product or a blank product
@@ -30,7 +30,7 @@ function InventoryForm({ onSuccess, product = null }) {
   };
 
   const calculateTotalValue = () => {
-    return products.reduce((total, prod) => 
+    return products.reduce((total, prod) =>
       total + ((parseFloat(prod.cost) || 0) * (parseInt(prod.quantity) || 0)), 0
     );
   };
@@ -52,33 +52,43 @@ function InventoryForm({ onSuccess, product = null }) {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const user = auth.currentUser;
-    if (!user) return alert("Please log in first");
+  e.preventDefault();
+  const user = auth.currentUser;
+  if (!user) return alert("Please log in first");
 
-    try {
-      const promises = products.map((prod, index) => {
-        // If editing, keep the existing SKU; otherwise generate a new one
-        const sku = prod.sku || `${prod.category.substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}-${index + 1}`;
-        return set(ref(db, `businessData/${user.uid}/inventory/${sku}`), {
+  try {
+    const promises = products.flatMap((prod, index) => {
+      // 1. Generate or keep SKU
+      const sku = prod.sku || `${prod.category.substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}-${index + 1}`;
+      
+      const productPath = `businessData/${user.uid}/inventory/${sku}`;
+      const barcodePath = `businessData/${user.uid}/barcode/${prod.id}`;
+
+      // 2. Return an array of both sets to be processed by flatMap
+      return [
+        set(ref(db, productPath), {
           ...prod,
-          sku: sku, // save SKU in object
+          sku: sku,
           lastUpdated: new Date().toISOString()
-        });
-      });
+        }),
+        set(ref(db, barcodePath), { 
+          barcode: sku,
+          productId: prod.id // helpful for reverse lookup
+        })
+      ];
+    });
 
-      await Promise.all(promises);
-      alert("Inventory successfully updated!");
-      onSuccess();
+    await Promise.all(promises);
+    alert("Inventory and Barcode references updated!");
+    onSuccess();
 
-      // Reset form after add (edit form will close anyway)
-      if (!product) {
-        setProducts([{ id: Date.now(), product: '', category: '', quantity: 0, cost: 0, price: 0, reorderLevel: 5 }]);
-      }
-    } catch (err) {
-      alert("Error saving: " + err.message);
+    if (!product) {
+      setProducts([{ id: Date.now(), product: '', category: '', quantity: 0, cost: 0, price: 0, reorderLevel: 5 }]);
     }
-  };
+  } catch (err) {
+    alert("Error saving: " + err.message);
+  }
+};
 
   // If the `product` prop changes (selecting a different product for editing), update form
   useEffect(() => {
@@ -90,13 +100,13 @@ function InventoryForm({ onSuccess, product = null }) {
   return (
     <div className='max-w-4xl mx-auto p-3 md:p-6 bg-white rounded-2xl'>
       <div className='flex justify-between items-center mb-6'>
-                <div>
-                    <h2 className='text-2xl font-bold text-gray-800'>
-                        Add New Product to Inventory
-                    </h2>
-                    
-                </div>
-            </div>
+        <div>
+          <h2 className='text-2xl font-bold text-gray-800'>
+            Add New Product to Inventory
+          </h2>
+
+        </div>
+      </div>
       {/* Category Management */}
       <div className="mb-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -106,8 +116,8 @@ function InventoryForm({ onSuccess, product = null }) {
           </div>
           {isAddingCategory ? (
             <div className="flex gap-2 w-full sm:w-auto">
-              <input 
-                className="p-2 text-sm border rounded-lg bg-white" 
+              <input
+                className="p-2 text-sm border rounded-lg bg-white"
                 placeholder="New Category..."
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}

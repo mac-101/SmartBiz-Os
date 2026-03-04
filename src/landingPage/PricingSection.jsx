@@ -1,30 +1,56 @@
 const plans = [
+  
   {
     name: "Starter",
-    price: "$49",
-    desc: "Ideal for small teams to track finances with essential tools.",
-    features: ["Up to 10 users", "Core dashboard & reporting", "Standard integrations", "Email support"],
+    price: "₦5,000",
+    period: "/month",
+    desc: "Perfect for small shops and solo entrepreneurs starting out.",
+    features: [
+      "1 Admin User", 
+      "Up to 200 SKUs", // Added a limit to protect your Firebase reads
+      "Core Inventory Tracking", 
+      "Daily Sales Reports", 
+      "Email Support"
+    ],
     button: "Get Started",
     popular: false,
-    free: true
+    free: true, // Added a free flag to highlight the 2 months free offer
   },
   {
     name: "Growth",
-    price: "$149",
-    desc: "Built for scaling teams needing advanced insights and automation.",
-    features: ["Up to 50 users", "Advanced analytics", "Priority integrations", "Automated workflows", "AI analytics and insights", "Priority support"],
+    price: "₦15,000",
+    period: "/month",
+    desc: "For growing businesses needing deeper insights and team sync.",
+    features: [
+      "Up to 10 Users", // 50 users for 15k might spike your Firebase 'reads' too high
+      "Unlimited SKUs", 
+      "Low Stock Alerts (Push/SMS)", 
+      "Barcode Scanning Support", 
+      "Profit & Loss Analytics", 
+      "Priority Email Support"
+    ],
     button: "Start Growing",
     popular: true,
   },
   {
     name: "Enterprise",
-    price: "Custom",
-    desc: "Tailored for large organizations with strict compliance.",
-    features: ["Unlimited users", "Dedicated manager", "On-premise deployment", "24/7 support", "AI analytics and insights", "Custom integrations", "Advanced security features"],
-    button: "Talk to Sales",
+    price: "₦35,000",
+    period: "/month",
+    desc: "Full-scale solution for multi-location warehouses and large teams.",
+    features: [
+      "Unlimited Users", 
+      "Multi-Warehouse Sync", 
+      "Audit Logs (Staff Activity)", 
+      "AI Demand Forecasting", 
+      "Custom API Access", 
+      "Dedicated WhatsApp Support", 
+      "Advanced Security & Backups"
+    ],
+    button: "Contact Sales",
     popular: false,
-  },
-];
+  }
+]
+
 
 export function PricingSection() {
   return (
@@ -35,7 +61,7 @@ export function PricingSection() {
           <p className="text-gray-500 mt-4">Flexible, transparent pricing built to grow with your team.</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 items-stretch">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
           {plans.map((plan, i) => (
             <div key={i} className={`relative flex flex-col p-8 rounded-3xl bg-white transition-all ${
               plan.popular ? "ring-2 ring-gray-900 shadow-2xl scale-105 z-10" : "border border-gray-100 shadow-sm"
@@ -54,7 +80,7 @@ export function PricingSection() {
               <div className="mb-8">
                 <span className="text-5xl font-bold text-gray-900">{plan.price}</span>
                 {plan.price !== "Custom" && <span className="text-gray-400 text-sm ml-2">/month</span>} <br />
-                {plan.free && <span className="text-green-500 text-sm ml-2 font-bold">2 months free</span>}
+                {plan.free && <span className="text-green-500 text-sm ml-2 font-bold">1 months free</span>}
               </div>
 
               <ul className="space-y-4 mb-10 flex-1">

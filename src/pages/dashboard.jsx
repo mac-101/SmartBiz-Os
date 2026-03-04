@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
-    const [timeFilter, setTimeFilter] = useState('month');
+    const [timeFilter, setTimeFilter] = useState('today');
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 

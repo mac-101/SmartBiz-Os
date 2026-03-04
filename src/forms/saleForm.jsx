@@ -1,20 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; // Added useRef
 import { ref, onValue, set, update } from 'firebase/database';
 import { db, auth } from '../../firebase.config';
-import { onAuthStateChanged } from 'firebase/auth'; // Added for better auth handling
+import { onAuthStateChanged } from 'firebase/auth';
+import { Scan } from 'lucide-react'; // Optional icon
 
 export default function SaleForm({onClose}) {
   const [products, setProducts] = useState([
-    { productId: '', quantity: 0, price: 0, total: 0, productName: '', availableStock: 0 }
+    { productId: '', quantity: 1, price: 0, total: 0, productName: '', availableStock: 0 }
   ]);
   const [inventoryList, setInventoryList] = useState([]);
   const [customer, setCustomer] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [loading, setLoading] = useState(true);
+  const [barcodeInput, setBarcodeInput] = useState(''); // New state for barcode
+  const scanInputRef = useRef(null);
 
-  // 1. Better Auth & Fetch Logic
   useEffect(() => {
-    // This ensures we wait for the user to be logged in before fetching
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         const inventoryRef = ref(db, `businessData/${user.uid}/inventory`);
@@ -23,7 +24,7 @@ export default function SaleForm({onClose}) {
           if (data) {
             const list = Object.keys(data).map(key => ({
               ...data[key],
-              firebaseKey: key // This is the actual folder name (e.g. "-NqJ8...")
+              firebaseKey: key 
             }));
             setInventoryList(list);
           }
@@ -34,9 +35,50 @@ export default function SaleForm({onClose}) {
         setLoading(false);
       }
     });
-
     return () => unsubscribeAuth();
   }, []);
+
+  /* ---------------- BARCODE SCANNER LOGIC ---------------- */
+  const handleBarcodeScan = (e) => {
+    e.preventDefault();
+    const sku = barcodeInput.trim();
+    if (!sku) return;
+
+    // Find product in inventory that matches the SKU
+    const item = inventoryList.find(i => i.sku === sku || i.firebaseKey === sku);
+
+    if (item) {
+      const existingProductIndex = products.findIndex(p => p.productId === item.firebaseKey);
+
+      if (existingProductIndex !== -1) {
+        // If product already in list, just increase quantity
+        const newProducts = [...products];
+        newProducts[existingProductIndex].quantity += 1;
+        newProducts[existingProductIndex].total = newProducts[existingProductIndex].quantity * newProducts[existingProductIndex].price;
+        setProducts(newProducts);
+      } else {
+        // If it's a new product, add a new row (or replace the first empty row)
+        const newRow = {
+          productId: item.firebaseKey,
+          productName: item.product || item.productName,
+          price: Number(item.price),
+          quantity: 1,
+          availableStock: Number(item.quantity),
+          total: Number(item.price)
+        };
+
+        if (products.length === 1 && products[0].productId === '') {
+          setProducts([newRow]);
+        } else {
+          setProducts([...products, newRow]);
+        }
+      }
+      setBarcodeInput(''); // Clear input for next scan
+    } else {
+      alert("Product not found for this barcode!");
+      setBarcodeInput('');
+    }
+  };
 
   const getCurrentDate = () => {
     const date = new Date();
@@ -54,18 +96,17 @@ export default function SaleForm({onClose}) {
     }
   };
 
-  // FIXED: Improved selection logic
   const handleProductChange = (index, selectedFirebaseKey) => {
     const item = inventoryList.find(i => i.firebaseKey === selectedFirebaseKey);
-
     if (item) {
       const newProducts = [...products];
       newProducts[index] = {
         ...newProducts[index],
-        productId: item.firebaseKey, // We use the folder name here
+        productId: item.firebaseKey,
         productName: item.product || item.productName,
         price: Number(item.price),
-        availableStock: Number(item.quantity)
+        availableStock: Number(item.quantity),
+        total: Number(item.price) * (newProducts[index].quantity || 1)
       };
       setProducts(newProducts);
     }
@@ -73,7 +114,7 @@ export default function SaleForm({onClose}) {
 
   const handleQuantityChange = (index, qty) => {
     const newProducts = [...products];
-    const val = Math.max(0, parseInt(qty) || 0); // Prevent negative numbers
+    const val = Math.max(0, parseInt(qty) || 0);
     newProducts[index].quantity = val;
     newProducts[index].total = newProducts[index].price * val;
     setProducts(newProducts);
@@ -82,7 +123,6 @@ export default function SaleForm({onClose}) {
   const calculateTotal = () => products.reduce((sum, item) => sum + item.total, 0);
 
   const validateStock = () => {
-    // Ensure all rows have a product, qty > 0, and don't exceed stock
     return products.length > 0 && products.every(p =>
       p.productId !== '' &&
       p.quantity > 0 &&
@@ -96,63 +136,47 @@ export default function SaleForm({onClose}) {
     if (!user) return alert("Please log in");
     if (!validateStock()) return alert("Check product selection and stock levels!");
 
-    console.log("🚀 Starting Individual Sale Processing...");
-    
     try {
       const updates = {};
       const timestamp = Date.now();
-      const isoDate = new Date().toISOString();
-      const displayDate = getCurrentDate();
+      const transactionId = `TRANS-${timestamp}`;
+      const grandTotal = calculateTotal();
 
-      // We loop through each product and create a unique Firebase entry for it
-      products.forEach((p, index) => {
-        if (p.productId) {
-          // 1. Generate a unique ID for THIS specific item record
-          const individualSaleId = `SALE-${timestamp}-${index}`;
-          const salePath = `businessData/${user.uid}/sales/${individualSaleId}`;
+      const mainSalePath = `businessData/${user.uid}/sales/${transactionId}`;
+      updates[mainSalePath] = {
+        transactionId,
+        customer: customer || 'Walk-in Customer',
+        paymentMethod,
+        date: new Date().toISOString(),
+        displayDate: getCurrentDate(),
+        grandTotal,
+        items: products.map(p => ({
+          productId: p.productId,
+          productName: p.productName,
+          quantity: p.quantity,
+          price: p.price,
+          total: p.total
+        }))
+      };
 
-          // 2. Add the Sale Record to our update object
-          updates[salePath] = {
-            customer: customer || 'Walk-in Customer',
-            paymentMethod,
-            productId: p.productId,
-            productName: p.productName,
-            quantity: p.quantity,
-            price: p.price,
-            total: p.total, // Individual subtotal
-            date: isoDate,
-            displayDate: displayDate
-          };
-
-          // 3. Add the Inventory Deduction to our update object
-          const inventoryPath = `businessData/${user.uid}/inventory/${p.productId}/quantity`;
-          const newQty = Number(p.availableStock) - Number(p.quantity);
-          updates[inventoryPath] = newQty;
-
-          console.log(`Prepared: ${p.productName} (Qty: ${p.quantity})`);
-        }
+      products.forEach((p) => {
+        const inventoryQtyPath = `businessData/${user.uid}/inventory/${p.productId}/quantity`;
+        const newQty = Number(p.availableStock) - Number(p.quantity);
+        updates[inventoryQtyPath] = newQty;
       });
 
-      // 4. EXECUTE ALL UPDATES AT ONCE (Atomic Update)
       await update(ref(db), updates);
-      
-      alert(`✅ ${products.length} item(s) recorded successfully!`);
-
-      // Reset Form
+      alert(`✅ Transaction recorded!`);
       onClose();
-      setProducts([{ productId: '', quantity: 1, price: 0, total: 0, productName: '', availableStock: 0 }]);
-      setCustomer('');
-
     } catch (err) {
-      console.error("❌ ERROR during sale:", err);
       alert("Error saving sale: " + err.message);
     }
   };
 
-  if (loading) return <div className="p-10 text-center text-gray-500">Loading Inventory...</div>;
+  if (loading) return <div className="p-10 text-center text-gray-500 font-medium">Loading Inventory...</div>;
 
   return (
-    <div className='max-w-4xl mx-auto p-4 md:p-6 bg-white rounded-xl '>
+    <div className='max-w-4xl mx-auto p-4 md:p-6 bg-white rounded-xl'>
       <div className='flex justify-between items-center mb-6'>
         <div>
           <h2 className='text-2xl font-bold text-gray-800'>New Sale</h2>
@@ -162,9 +186,9 @@ export default function SaleForm({onClose}) {
 
       <form onSubmit={handleSubmit} className='space-y-6'>
         {/* Customer & Payment */}
-        <div className='grid grid-cols-3 md:grid-cols-2 gap-6'>
-          <div className='col-span-2 md:col-span-1'>
-            <label className='block  text-sm font-medium text-gray-700 mb-2'>Customer Name</label>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+          <div>
+            <label className='block text-sm font-medium text-gray-700 mb-2'>Customer Name</label>
             <input
               type="text"
               value={customer}
@@ -174,7 +198,7 @@ export default function SaleForm({onClose}) {
             />
           </div>
 
-          <div className='col-span-1 md:col-span-1'>
+          <div>
             <label className='block text-sm font-medium text-gray-700 mb-2'>Payment Method</label>
             <select
               value={paymentMethod}
@@ -189,12 +213,32 @@ export default function SaleForm({onClose}) {
           </div>
         </div>
 
+        {/* Barcode Scan Area - NEW UI ADDITION */}
+        <div className='bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-center gap-4'>
+           <div className='bg-blue-600 p-2 rounded-lg text-white'>
+              <Scan size={20}/>
+           </div>
+           <div className='flex-1'>
+              <label className='block text-[10px] uppercase font-bold text-blue-600 mb-1'>Barcode Scan Mode</label>
+              <input 
+                ref={scanInputRef}
+                type="text"
+                value={barcodeInput}
+                onChange={(e) => setBarcodeInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleBarcodeScan(e)}
+                placeholder="Scan barcode or type SKU here..."
+                className='w-full bg-transparent border-b border-blue-200 focus:border-blue-500 outline-none text-sm font-medium'
+              />
+           </div>
+           <p className='text-[10px] text-blue-400 italic hidden md:block'>Tip: Hit 'Enter' to add item</p>
+        </div>
+
         {/* Product Items */}
         <div className='space-y-4'>
           <div className='flex justify-between items-center border-b pb-2'>
             <h3 className='text-lg font-semibold text-gray-700'>Items</h3>
             <button type="button" onClick={addProductRow} className='text-blue-600 font-bold text-sm hover:underline'>
-              + Add Item
+              + Add Item Manually
             </button>
           </div>
 
@@ -214,7 +258,6 @@ export default function SaleForm({onClose}) {
                 )}
 
                 <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
-                  {/* Dropdown */}
                   <div>
                     <label className='block text-[10px] uppercase font-bold text-gray-400 mb-1'>Product</label>
                     <select
@@ -225,13 +268,12 @@ export default function SaleForm({onClose}) {
                       <option value="">Select product</option>
                       {inventoryList.map((item) => (
                         <option key={item.firebaseKey} value={item.firebaseKey}>
-                          {item.product}
+                          {item.product} ({item.sku || 'No SKU'})
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Qty */}
                   <div>
                     <label className='block text-[10px] uppercase font-bold text-gray-400 mb-1'>Qty</label>
                     <input
@@ -247,13 +289,11 @@ export default function SaleForm({onClose}) {
                     )}
                   </div>
 
-                  {/* Price */}
                   <div>
                     <label className='block text-[10px] uppercase font-bold text-gray-400 mb-1'>Unit Price</label>
                     <div className='p-2 text-sm font-semibold'>₦{product.price.toLocaleString()}</div>
                   </div>
 
-                  {/* Subtotal */}
                   <div>
                     <label className='block text-[10px] uppercase font-bold text-gray-400 mb-1'>Subtotal</label>
                     <div className='p-2 text-blue-700 font-bold text-sm'>₦{product.total.toLocaleString()}</div>
@@ -273,7 +313,7 @@ export default function SaleForm({onClose}) {
         <button
           type="submit"
           disabled={!validateStock()}
-          className='w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed '
+          className='w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed'
         >
           {validateStock() ? 'Complete Sale' : 'Please check items & stock'}
         </button>

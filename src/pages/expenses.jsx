@@ -104,7 +104,7 @@ export default function Expenses() {
   if (loading) return <ExpensesSkeleton />;
 
   return (
-    <div className="max-w-[1600px] mx-auto p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
+    <div className="max-w-[1600px] mx-auto p-2 lg:p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-100 pb-6">
@@ -271,14 +271,16 @@ function ExpenseStat({ label, value, icon, subtext, color }) {
   };
 
   return (
-    <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm transition-transform hover:scale-[1.01]">
+    <div className="flex md:flex-col bg-white border border-slate-200 p-6 rounded-3xl shadow-sm transition-transform hover:scale-[1.01]">
       <div className="flex justify-between items-start mb-4">
         <div className={`p-3 rounded-2xl border ${themes[color]}`}>{icon}</div>
         <ChevronRight size={16} className="text-slate-200" />
       </div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
       <h3 className="text-2xl font-black text-slate-900 mt-1">₦{Number(value || 0).toLocaleString()}</h3>
       <p className="text-[11px] font-bold text-slate-400 mt-1">{subtext}</p>
+      </div>
     </div>
   );
 }

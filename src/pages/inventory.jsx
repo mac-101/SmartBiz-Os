@@ -93,7 +93,7 @@ export default function Inventory() {
     <>
 
     {!showBarcodePrinter ? (
-      <div className="max-w-[1600px] mx-auto p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
+      <div className="max-w-[1600px] mx-auto p-2 md:p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
 
       {/* 1. Header Area */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-100 pb-6">
@@ -297,7 +297,7 @@ function MetricTile({ label, val, icon, color }) {
     rose: "text-rose-600 bg-rose-50 border-rose-100"
   };
   return (
-    <div className={`p-6 rounded-2xl  bg-white shadow-sm flex items-center gap-4 transition-transform hover:scale-[1.02]`}>
+    <div className={`p-6 rounded-2xl  bg-white shadow-sm flex items-center md:flex-col md:items-start gap-4 transition-transform hover:scale-[1.02]`}>
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${themes[color]}`}>{icon}</div>
       <div>
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>

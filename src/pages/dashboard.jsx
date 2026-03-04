@@ -121,7 +121,7 @@ export default function Dashboard() {
     if (loading) return <DashboardSkeleton />;
 
     return (
-        <div className="max-w-[1600px] mx-auto p-6 min-h-screen bg-[#F9FAFB] space-y-8">
+        <div className="max-w-[1600px] mx-auto p-2 lg:p-6 min-h-screen bg-[#F9FAFB] space-y-8">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 border-b border-slate-200 pb-6">
                 <div>
@@ -129,7 +129,7 @@ export default function Dashboard() {
                     <p className="text-sm text-slate-500 font-medium">Monitoring business performance for {timeFilter}</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
                     <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
                         {['today', 'week', 'month', 'year'].map((p) => (
                             <button 

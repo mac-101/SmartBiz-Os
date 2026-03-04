@@ -90,7 +90,7 @@ export default function Sales() {
   if (loading) return <SalesSkeleton />;
 
   return (
-    <div className="max-w-[1600px] mx-auto p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
+    <div className="max-w-[1600px] mx-auto p-2 lg:p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
       
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -121,7 +121,8 @@ export default function Sales() {
 
       {/* Main Table */}
       <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-        <table className="w-full text-left border-collapse">
+       <div className="overflow-x-auto">
+       <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100">
               <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaction</th>
@@ -208,7 +209,8 @@ export default function Sales() {
               </React.Fragment>
             ))}
           </tbody>
-        </table>
+        </table> 
+       </div>
       </div>
     </div>
   );
@@ -224,11 +226,13 @@ function SaleStat({ label, value, icon, color, sub }) {
     slate: "bg-slate-50 text-slate-600 border-slate-100"
   };
   return (
-    <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all">
+    <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all flex items-center gap-4 md:flex-col md:items-start">
       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border mb-4 ${themes[color]}`}>{icon}</div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
       <h3 className="text-2xl font-black text-slate-900 mt-1">{value}</h3>
       <p className="text-[11px] font-bold text-slate-400 mt-1">{sub}</p>
+      </div>
     </div>
   );
 }

@@ -30,15 +30,23 @@ export default function Sales() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-    const salesRef = ref(db, `businessData/${user.uid}/sales`);
+    // 1. Get the "Store Key" we saved during Login
+    const bizId = localStorage.getItem("active_business_id");
+    
+    // 2. If no user or no bizId, don't try to fetch
+    if (!user || !bizId) return;
+
+    // 3. Use bizId instead of user.uid
+    const salesRef = ref(db, `businessData/${bizId}/sales`);
+    
     const unsubscribe = onValue(salesRef, (snapshot) => {
       const data = snapshot.val();
       setSales(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
       setLoading(false);
     });
+
     return () => unsubscribe();
-  }, [user]);
+  }, [user]); // Keep 'user' here so it triggers when they log in
 
   // 1. FILTERED SALES (Must come first)
   const filteredSales = useMemo(() => {

@@ -96,6 +96,8 @@ const FinancialChart = ({ timeFilter = 'today', salesData = [], expensesData = [
 
   /* ---------------- PROCESS DATA ---------------- */
 
+  /* ---------------- PROCESS DATA ---------------- */
+
   useEffect(() => {
     const range = getDateRange(timeFilter);
     const bucket = {};
@@ -121,7 +123,8 @@ const FinancialChart = ({ timeFilter = 'today', salesData = [], expensesData = [
           };
         }
 
-        bucket[key].sales += Number(sale.total) || 0;
+        // FIX: Change 'sale.total' to 'sale.grandTotal'
+        bucket[key].sales += Number(sale.grandTotal) || 0;
       });
 
     // EXPENSES
@@ -180,16 +183,16 @@ const FinancialChart = ({ timeFilter = 'today', salesData = [], expensesData = [
     <div className="w-full h-full min-h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          
+
           <defs>
             <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
+              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
             </linearGradient>
 
             <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1}/>
-              <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1} />
+              <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
             </linearGradient>
           </defs>
 

@@ -3,11 +3,11 @@ import FinancialChart from "../components/chart";
 import { ref, onValue } from "firebase/database";
 import { db, auth } from "../../firebase.config";
 import { onAuthStateChanged } from 'firebase/auth';
-import { 
-    Download, 
-    ArrowUpRight, 
-    ArrowDownRight, 
-    Layers, 
+import {
+    Download,
+    ArrowUpRight,
+    ArrowDownRight,
+    Layers,
     AlertCircle,
     Calendar,
     ChevronDown
@@ -37,9 +37,9 @@ export default function Dashboard() {
                 startOfWeek.setDate(today.getDate() - today.getDay() + 1);
                 return { start: formatDate(startOfWeek), end: formatDate(today) };
             case 'month':
-                return { 
-                    start: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`, 
-                    end: formatDate(new Date(currentYear, currentMonth + 1, 0)) 
+                return {
+                    start: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`,
+                    end: formatDate(new Date(currentYear, currentMonth + 1, 0))
                 };
             case 'year': return { start: `${currentYear}-01-01`, end: `${currentYear}-12-31` };
             default: return { start: '1970-01-01', end: '2099-12-31' };
@@ -47,23 +47,30 @@ export default function Dashboard() {
     };
 
     const isDateInRange = (dateStr, range) => {
-        if (!dateStr) return false;
-        const d = dateStr.split('T')[0];
-        return d >= range.start && d <= range.end;
+    if (!dateStr) return false;
+    // Extract YYYY-MM-DD from the ISO string or displayDate
+    const d = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+    return d >= range.start && d <= range.end;
+};
+
+   const filteredData = useMemo(() => {
+    const range = getDateRange(timeFilter);
+    
+    // Filter sales based on the date
+    const filteredSales = sales.filter(s => isDateInRange(s.date, range));
+    
+    // Filter expenses based on the date
+    const filteredExpenses = expenses.filter(e => isDateInRange(e.date, range));
+
+    return {
+        sales: filteredSales,
+        expenses: filteredExpenses,
+        // FIX: Use grandTotal because that is what your handleSubmit saves
+        totalSales: filteredSales.reduce((a, c) => a + (Number(c.grandTotal) || 0), 0),
+        // FIX: Ensure expenses use 'amount'
+        totalExpenses: filteredExpenses.reduce((a, c) => a + (Number(c.amount) || 0), 0),
     };
-
-    const filteredData = useMemo(() => {
-        const range = getDateRange(timeFilter);
-        const filteredSales = sales.filter(s => isDateInRange(s.date, range));
-        const filteredExpenses = expenses.filter(e => isDateInRange(e.date, range));
-
-        return {
-            sales: filteredSales,
-            expenses: filteredExpenses,
-            totalSales: filteredSales.reduce((a, c) => a + (Number(c.total) || 0), 0),
-            totalExpenses: filteredExpenses.reduce((a, c) => a + (Number(c.amount) || 0), 0),
-        };
-    }, [timeFilter, sales, expenses]);
+}, [timeFilter, sales, expenses]);
 
     // --- Export Logic ---
     const handleExportReport = () => {
@@ -72,7 +79,7 @@ export default function Dashboard() {
         const saleRows = filteredData.sales.map(s => ["Income", s.productName, s.total, s.date.split('T')[0]]);
         const expenseRows = filteredData.expenses.map(e => ["Expense", e.category, e.amount, e.date]);
 
-        const csvContent = "data:text/csv;charset=utf-8," 
+        const csvContent = "data:text/csv;charset=utf-8,"
             + [headers, ...saleRows, ...expenseRows].map(e => e.join(",")).join("\n");
 
         const link = document.createElement("a");
@@ -90,33 +97,56 @@ export default function Dashboard() {
     }, []);
 
     useEffect(() => {
-        if (!user) return;
-        
-        const dataPaths = {
-            sales: `businessData/${user.uid}/sales`,
-            expenses: `businessData/${user.uid}/expenses`,
-            inventory: `businessData/${user.uid}/inventory`
-        };
+    // 1. Get the Store Key from storage
+    const bizId = localStorage.getItem("active_business_id");
 
-        const unsubS = onValue(ref(db, dataPaths.sales), (snap) => {
-            const val = snap.val() || {};
-            setSales(Object.keys(val).map(k => ({ id: k, ...val[k] })));
-        });
+    // 2. Stop if no user or no bizId
+    if (!user || !bizId) return;
 
-        const unsubE = onValue(ref(db, dataPaths.expenses), (snap) => {
-            const val = snap.val() || {};
-            setExpenses(Object.keys(val).map(k => ({ id: k, ...val[k] })));
-        });
+    // 3. Set up the paths using bizId
+    const salesRef = ref(db, `businessData/${bizId}/sales`);
+    const expensesRef = ref(db, `businessData/${bizId}/expenses`);
+    const inventoryRef = ref(db, `businessData/${bizId}/inventory`);
 
-        const unsubI = onValue(ref(db, dataPaths.inventory), (snap) => {
-            const list = Object.values(snap.val() || {});
-            setInventoryItems(list.length);
-            setLowStockAlerts(list.filter(i => (Number(i.quantity) || 0) < 5).length);
-            setLoading(false);
-        });
+    // FETCH SALES (Using the Flat Logic from your Sales Page)
+    const unsubS = onValue(salesRef, (snap) => {
+        const data = snap.val();
+        // If data exists, map it; otherwise, empty array
+        const allSales = data ? Object.keys(data).map(key => ({ 
+            id: key, 
+            ...data[key] 
+        })) : [];
 
-        return () => { unsubS(); unsubE(); unsubI(); };
-    }, [user]);
+        // Sort by date (Newest first)
+        allSales.sort((a, b) => new Date(b.date) - new Date(a.date));
+        setSales(allSales);
+    });
+
+    // FETCH EXPENSES
+    const unsubE = onValue(expensesRef, (snap) => {
+        const data = snap.val();
+        const allExpenses = data ? Object.keys(data).map(key => ({ 
+            id: key, 
+            ...data[key] 
+        })) : [];
+        setExpenses(allExpenses);
+    });
+
+    // FETCH INVENTORY
+    const unsubI = onValue(inventoryRef, (snap) => {
+        const val = snap.val() || {};
+        const list = Object.values(val);
+        setInventoryItems(list.length);
+        setLowStockAlerts(list.filter(i => (Number(i.quantity) || 0) < 5).length);
+        setLoading(false);
+    });
+
+    return () => {
+        unsubS();
+        unsubE();
+        unsubI();
+    };
+}, [user]); // user is the only dependency needed
 
     if (loading) return <DashboardSkeleton />;
 
@@ -132,16 +162,16 @@ export default function Dashboard() {
                 <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
                     <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
                         {['today', 'week', 'month', 'year'].map((p) => (
-                            <button 
-                                key={p} 
-                                onClick={() => setTimeFilter(p)} 
+                            <button
+                                key={p}
+                                onClick={() => setTimeFilter(p)}
                                 className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${timeFilter === p ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                             >
                                 {p.charAt(0).toUpperCase() + p.slice(1)}
                             </button>
                         ))}
                     </div>
-                    <button 
+                    <button
                         onClick={handleExportReport}
                         className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-all shadow-sm"
                     >
@@ -153,29 +183,29 @@ export default function Dashboard() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <MetricCard 
-                    title="Revenue" 
-                    value={filteredData.totalSales} 
-                    trend="+12.5%" 
+                <MetricCard
+                    title="Revenue"
+                    value={filteredData.totalSales}
+                    trend="+12.5%"
                     trendUp={true}
-                    icon={<ArrowUpRight size={16} className="text-emerald-500" />} 
+                    icon={<ArrowUpRight size={16} className="text-emerald-500" />}
                 />
-                <MetricCard 
-                    title="Expenses" 
-                    value={filteredData.totalExpenses} 
-                    trend="-2.1%" 
+                <MetricCard
+                    title="Expenses"
+                    value={filteredData.totalExpenses}
+                    trend="-2.1%"
                     trendUp={false}
-                    icon={<ArrowDownRight size={16} className="text-rose-500" />} 
+                    icon={<ArrowDownRight size={16} className="text-rose-500" />}
                 />
-                <MetricCard 
-                    title="Net Profit" 
-                    value={filteredData.totalSales - filteredData.totalExpenses} 
+                <MetricCard
+                    title="Net Profit"
+                    value={filteredData.totalSales - filteredData.totalExpenses}
                     isProfit={true}
                 />
-                <MetricCard 
-                    title="Inventory" 
-                    value={inventoryItems} 
-                    isCurrency={false} 
+                <MetricCard
+                    title="Inventory"
+                    value={inventoryItems}
+                    isCurrency={false}
                     subtitle={`${lowStockAlerts} low stock alerts`}
                     icon={<Layers size={16} className="text-slate-400" />}
                 />
@@ -192,10 +222,10 @@ export default function Dashboard() {
                         </div>
                     </div>
                     <div className="p-6 h-[400px]">
-                        <FinancialChart 
-                            timeFilter={timeFilter} 
-                            salesData={filteredData.sales} 
-                            expensesData={filteredData.expenses} 
+                        <FinancialChart
+                            timeFilter={timeFilter}
+                            salesData={filteredData.sales}
+                            expensesData={filteredData.expenses}
                         />
                     </div>
                 </div>

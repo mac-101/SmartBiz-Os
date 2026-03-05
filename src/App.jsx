@@ -6,7 +6,7 @@ import BusinessSignup from './forms/signUp.jsx';
 import BusinessLogin from './forms/login.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import FirstTimeWrapper from './firstTimeWrapper.jsx';
-import StaffSignup from './pages/staffSignUp.jsx';
+import StaffSignup from './forms/staffSignUp.jsx';
 
 function AppContent() {
   return (

@@ -4,7 +4,7 @@ import { db, auth } from '../../firebase.config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Scan } from 'lucide-react'; // Optional icon
 
-export default function SaleForm({onClose}) {
+export default function SaleForm({ onClose }) {
   const [products, setProducts] = useState([
     { productId: '', quantity: 1, price: 0, total: 0, productName: '', availableStock: 0 }
   ]);
@@ -24,7 +24,7 @@ export default function SaleForm({onClose}) {
           if (data) {
             const list = Object.keys(data).map(key => ({
               ...data[key],
-              firebaseKey: key 
+              firebaseKey: key
             }));
             setInventoryList(list);
           }
@@ -133,7 +133,11 @@ export default function SaleForm({onClose}) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const user = auth.currentUser;
-    if (!user) return alert("Please log in");
+
+    // 1. Get the shared Business ID from storage
+    const bizId = localStorage.getItem("active_business_id");
+
+    if (!user || !bizId) return alert("Please log in again");
     if (!validateStock()) return alert("Check product selection and stock levels!");
 
     try {
@@ -142,7 +146,13 @@ export default function SaleForm({onClose}) {
       const transactionId = `TRANS-${timestamp}`;
       const grandTotal = calculateTotal();
 
-      const mainSalePath = `businessData/${user.uid}/sales/${transactionId}`;
+      // 2. Create the date string for the new folder structure
+      // This matches the "YYYY-MM-DD" fetch logic
+      const dateKey = new Date().toISOString().split('T')[0];
+
+      // 3. Update the path to include bizId and the Date folder
+      const mainSalePath = `businessData/${bizId}/sales/${transactionId}`;
+
       updates[mainSalePath] = {
         transactionId,
         customer: customer || 'Walk-in Customer',
@@ -150,6 +160,7 @@ export default function SaleForm({onClose}) {
         date: new Date().toISOString(),
         displayDate: getCurrentDate(),
         grandTotal,
+        sellerId: user.uid, // Good to track WHICH staff member made the sale
         items: products.map(p => ({
           productId: p.productId,
           productName: p.productName,
@@ -159,8 +170,9 @@ export default function SaleForm({onClose}) {
         }))
       };
 
+      // 4. Deduct inventory from the SHARED business folder
       products.forEach((p) => {
-        const inventoryQtyPath = `businessData/${user.uid}/inventory/${p.productId}/quantity`;
+        const inventoryQtyPath = `businessData/${bizId}/inventory/${p.productId}/quantity`;
         const newQty = Number(p.availableStock) - Number(p.quantity);
         updates[inventoryQtyPath] = newQty;
       });
@@ -215,22 +227,22 @@ export default function SaleForm({onClose}) {
 
         {/* Barcode Scan Area - NEW UI ADDITION */}
         <div className='bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-center gap-4'>
-           <div className='bg-blue-600 p-2 rounded-lg text-white'>
-              <Scan size={20}/>
-           </div>
-           <div className='flex-1'>
-              <label className='block text-[10px] uppercase font-bold text-blue-600 mb-1'>Barcode Scan Mode</label>
-              <input 
-                ref={scanInputRef}
-                type="text"
-                value={barcodeInput}
-                onChange={(e) => setBarcodeInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleBarcodeScan(e)}
-                placeholder="Scan barcode or type SKU here..."
-                className='w-full bg-transparent border-b border-blue-200 focus:border-blue-500 outline-none text-sm font-medium'
-              />
-           </div>
-           <p className='text-[10px] text-blue-400 italic hidden md:block'>Tip: Hit 'Enter' to add item</p>
+          <div className='bg-blue-600 p-2 rounded-lg text-white'>
+            <Scan size={20} />
+          </div>
+          <div className='flex-1'>
+            <label className='block text-[10px] uppercase font-bold text-blue-600 mb-1'>Barcode Scan Mode</label>
+            <input
+              ref={scanInputRef}
+              type="text"
+              value={barcodeInput}
+              onChange={(e) => setBarcodeInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleBarcodeScan(e)}
+              placeholder="Scan barcode or type SKU here..."
+              className='w-full bg-transparent border-b border-blue-200 focus:border-blue-500 outline-none text-sm font-medium'
+            />
+          </div>
+          <p className='text-[10px] text-blue-400 italic hidden md:block'>Tip: Hit 'Enter' to add item</p>
         </div>
 
         {/* Product Items */}

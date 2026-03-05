@@ -1,54 +1,104 @@
-import React, { useState } from 'react';
-import { auth } from '../../firebase.config';
+import React, { useState } from "react";
+import { auth } from "../../firebase.config";
 
 const ROLES = {
-  sales: "Can only sell items and view their own daily sales. Cannot see purchase costs.",
-  inventory: "Can add products and update stock levels. Cannot view profit reports.",
-  admin: "Full access to everything except business owner settings."
+  sales: {
+    title: "Sales",
+    desc: "Sell items and view own daily sales"
+  },
+  inventory: {
+    title: "Inventory",
+    desc: "Add products and manage stock"
+  },
+  admin: {
+    title: "Admin",
+    desc: "Access reports and manage staff"
+  }
 };
 
 export default function InviteStaff() {
-  const [role, setRole] = useState('sales');
-  const [inviteLink, setInviteLink] = useState('');
+
+  const [role, setRole] = useState("sales");
+  const [inviteLink, setInviteLink] = useState("");
 
   const generateLink = () => {
     const managerId = auth.currentUser.uid;
-    // In a real app, 'yourdomain.com' would be your actual URL
     const baseUrl = window.location.origin;
-    const link = `${baseUrl}/staff-signup?bid=${managerId}&role=${role}`;
+
+    const token = Math.random().toString(36).substring(2, 10);
+
+    const link =
+      `${baseUrl}/staff-signup?bid=${managerId}&role=${role}&token=${token}`;
+
     setInviteLink(link);
   };
 
+  const copyLink = () => {
+    navigator.clipboard.writeText(inviteLink);
+  };
+
   return (
-    <div className="p-6 max-w-md mx-auto bg-white rounded-2xl shadow-lg">
-      <h2 className="text-xl font-bold mb-4">Invite New Staff</h2>
-      
-      <div className="space-y-4">
-        {Object.entries(ROLES).map(([r, desc]) => (
-          <div 
-            key={r} 
-            onClick={() => setRole(r)}
-            className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${role === r ? 'border-blue-600 bg-blue-50' : 'border-gray-100'}`}
+    <div className="p-6 max-w-xl mx-auto bg-white rounded-2xl shadow-lg">
+
+      <h2 className="text-xl font-bold mb-6">Invite Staff</h2>
+
+      {/* 3 GRID ROLE SELECTOR */}
+      <div className="grid grid-cols-3 gap-4">
+
+        {Object.entries(ROLES).map(([key, value]) => (
+          <div
+            key={key}
+            onClick={() => setRole(key)}
+            className={`p-4 rounded-xl border cursor-pointer transition
+              ${role === key
+                ? "border-black bg-gray-100"
+                : "border-gray-200 hover:border-gray-400"}
+            `}
           >
-            <p className="font-bold uppercase text-sm">{r}</p>
-            <p className="text-xs text-gray-500">{desc}</p>
+
+            <p className="font-semibold text-sm">
+              {value.title}
+            </p>
+
+            <p className="text-xs text-gray-500 mt-1">
+              {value.desc}
+            </p>
+
           </div>
         ))}
+
       </div>
 
-      <button 
+      {/* GENERATE BUTTON */}
+      <button
         onClick={generateLink}
-        className="w-full mt-6 py-3 bg-black text-white rounded-xl font-bold"
+        className="w-full mt-6 py-3 bg-black text-white rounded-xl font-semibold"
       >
         Generate Invite Link
       </button>
 
+      {/* LINK DISPLAY */}
       {inviteLink && (
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg break-all text-xs font-mono border">
-          <p className="mb-2 font-bold text-blue-600">Send this link to staff:</p>
-          {inviteLink}
+        <div className="mt-5 p-4 border rounded-xl bg-gray-50">
+
+          <p className="text-sm font-semibold mb-2">
+            Invite Link
+          </p>
+
+          <p className="text-xs break-all font-mono mb-3">
+            {inviteLink}
+          </p>
+
+          <button
+            onClick={copyLink}
+            className="w-full py-2 bg-gray-900 text-white rounded-lg text-sm"
+          >
+            Copy Link
+          </button>
+
         </div>
       )}
+
     </div>
   );
 }

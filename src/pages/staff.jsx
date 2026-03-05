@@ -10,6 +10,7 @@ export default function ViewStaff() {
   const [search, setSearch] = useState("");
   const [addStaffOpen, setAddStaffOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [plan, setPlan] = useState("");
 
   // Get stored role and business ID
   const userRole = localStorage.getItem("user_role");
@@ -24,7 +25,12 @@ export default function ViewStaff() {
 
       // We now point to the shared Business ID, not the user.uid
       const staffRef = ref(db, `businessData/${bizId}/staff`);
-
+      const planRef = ref(db, `businessData/${bizId}/businessInfo/subscription`);
+      onValue(planRef, (snapshot) => {
+        if (snapshot.exists()) {
+          setPlan(snapshot.val().plan);
+        }
+      });
       const unsubscribeData = onValue(staffRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
@@ -89,7 +95,13 @@ export default function ViewStaff() {
             {/* Only show Invite button if user is Manager */}
             {userRole === "manager" && (
               <button
-                onClick={() => setAddStaffOpen(true)}
+                onClick={() => {
+                  if (plan === 'Free Trial' && !(staffList.length >= 1)) {
+                    setAddStaffOpen(true);
+                  } else {
+                    alert("Your current plan only allows 2 staff members. Please upgrade to add more.")
+                  }
+                }}
                 className="bg-black text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 shadow-lg shadow-gray-200 transition-all"
               >
                 + Invite Staff

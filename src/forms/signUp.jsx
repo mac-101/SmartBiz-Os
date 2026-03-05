@@ -17,6 +17,14 @@ function BusinessSignup() {
   const isValidEmail = (email) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const [loading, setLoading] = useState(false);
+  const startDate = new Date();
+  const endDate = new Date();
+  endDate.setDate(startDate.getDate() + 14);
+  const subscription = {
+    plan: "Free Trial",
+    planStartDate: startDate.toISOString(),
+    planEndDate: endDate.toISOString(),
+};
 
 
   const [business, setBusiness] = useState({
@@ -27,7 +35,7 @@ function BusinessSignup() {
     country: 'Nigeria',
     address: '',
     state: '',
-    website: 'http://'+ '',
+    website: 'http://' + '',
   });
 
   const [admin, setAdmin] = useState({
@@ -44,7 +52,7 @@ function BusinessSignup() {
   const isStepComplete = (stepNum) => {
     switch (stepNum) {
       case 1:
-        return business.name && business.type && business.email && business.phone ;
+        return business.name && business.type && business.email && business.phone;
       case 2:
         return business.address && business.state && business.country;
       case 3:
@@ -72,75 +80,80 @@ function BusinessSignup() {
   };
 
   // Handle final submit
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError(""); // Recommended: Clear previous errors
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(""); // Recommended: Clear previous errors
 
-  // 1. Validation Logic
-  if (!isValidEmail(admin.email)) {
-    setError("Please enter a valid email.");
-    setLoading(false);
-    return { success: false, error: "Invalid email" };
-  }
+    // 1. Validation Logic
+    if (!isValidEmail(admin.email)) {
+      setError("Please enter a valid email.");
+      setLoading(false);
+      return { success: false, error: "Invalid email" };
+    }
 
-  if (admin.password.length < 8) {
-    setError("Password must be at least 8 characters.");
-    setLoading(true); // Keep loading state consistent
-    setLoading(false);
-    return { success: false, error: "Password too short" };
-  }
+    if (admin.password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      setLoading(true); // Keep loading state consistent
+      setLoading(false);
+      return { success: false, error: "Password too short" };
+    }
 
-  // Check if passwords match
-  if (admin.password !== admin.confirmPassword) {
-    setError("Passwords do not match.");
-    setLoading(false);
-    return { success: false, error: "Password mismatch" };
-  }
+    // Check if passwords match
+    if (admin.password !== admin.confirmPassword) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return { success: false, error: "Password mismatch" };
+    }
 
-  try {
-    // 2. Auth Creation (Fixed: Using admin.password)
-    const userCredential = await createUserWithEmailAndPassword(auth, admin.email, admin.password);
-    const user = userCredential.user;
+    try {
+      // 2. Auth Creation (Fixed: Using admin.password)
+      const userCredential = await createUserWithEmailAndPassword(auth, admin.email, admin.password);
+      const user = userCredential.user;
 
-    // 3. Update Profile
-    await updateProfile(user, {
-      displayName: admin.fullName
-    });
+      // 3. Update Profile
+      await updateProfile(user, {
+        displayName: admin.fullName
+      });
 
-    // 4. Save to Database
-    const businessPath = `businessData/${user.uid}/businessInfo`;
-    await set(ref(db, businessPath), {
-      businessName: business.name,
-      businessType: business.type,
-      address: business.address,
-      contact: business.phone || admin.phone || business.email,
-      country: business.country,
-      state: business.state,
-      ownerName: admin.fullName,
-      role: "manager",
-      adminEmail: admin.email,
-      website: business.website,
-      createdAt: new Date().toISOString()
-    });
+      // 4. Save to Database
+      const businessPath = `businessData/${user.uid}/businessInfo`;
+      await set(ref(db, businessPath), {
+        businessName: business.name,
+        businessType: business.type,
+        address: business.address,
+        contact: business.phone || admin.phone || business.email,
+        country: business.country,
+        state: business.state,
+        ownerName: admin.fullName,
+        role: "manager",
+        adminEmail: admin.email,
+        website: business.website,
+       subscription: subscription,
+        createdAt: new Date().toISOString()
+      });
 
-    // 5. Reset States
-    setBusiness({ name: '', type: '', email: '', phone: '', country: 'Nigeria', address: '', state: '' });
-    setAdmin({ fullName: '', email: '', password: '', confirmPassword: '', phone: '' });
+      localStorage.setItem("active_business_id", user.uid);
+      localStorage.setItem("user_role", "manager");
+      localStorage.setItem("user_uid", user.uid);
 
-    console.log("Business account created successfully!");
-    navigate('/');
+      // 5. Reset States
+      setBusiness({ name: '', type: '', email: '', phone: '', country: 'Nigeria', address: '', state: '' });
+      setAdmin({ fullName: '', email: '', password: '', confirmPassword: '', phone: '' });
 
-    return { success: true, user: user }; // Successful return
+      console.log("Business account created successfully!");
+      navigate('/');
 
-  } catch (error) {
-    console.error("Error creating business account:", error);
-    setError(error.message); // Show Firebase error to user
-    return { success: false, error: error.message };
-  } finally {
-    setLoading(false);
-  }
-};
+      return { success: true, user: user }; // Successful return
+
+    } catch (error) {
+      console.error("Error creating business account:", error);
+      setError(error.message); // Show Firebase error to user
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-4 md:p-8">
@@ -275,9 +288,9 @@ function BusinessSignup() {
               <p className="text-gray-600 mb-6">Where is your business located?</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
 
-                 <div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Country *
                   </label>
@@ -321,7 +334,7 @@ function BusinessSignup() {
                   />
                 </div>
 
-              
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Business Website
@@ -343,7 +356,7 @@ function BusinessSignup() {
                 <div className="space-y-2">
                   <p className="font-medium">{business.address || '123 Business Street'}</p>
                   <p className="text-gray-600">
-                    {business.state || 'state' }
+                    {business.state || 'state'}
                   </p>
                   <p className="text-gray-600">{business.country}</p>
                 </div>
@@ -418,7 +431,7 @@ function BusinessSignup() {
                   )}
                 </div>
 
-                
+
               </div>
 
               {/* Terms & Conditions */}

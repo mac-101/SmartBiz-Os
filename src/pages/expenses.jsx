@@ -33,7 +33,9 @@ export default function Expenses() {
 
   useEffect(() => {
     if (!user) return;
-    const expenseRef = ref(db, `businessData/${user.uid}/expenses`);
+        const bizId = localStorage.getItem("active_business_id");
+
+    const expenseRef = ref(db, `businessData/${bizId}/expenses`);
     const unsubscribe = onValue(expenseRef, (snapshot) => {
       const data = snapshot.val();
       setExpenses(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);

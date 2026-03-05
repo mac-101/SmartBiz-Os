@@ -3,7 +3,7 @@ import { ref, update } from 'firebase/database'; // Swapped set/push for update
 import { db, auth } from '../../firebase.config';
 import { onAuthStateChanged } from 'firebase/auth';
 
-function ExpenseForm({onClose}) {
+function ExpenseForm({ onClose }) {
   const [expenses, setExpenses] = useState([
     { id: Date.now(), category: '', description: '', amount: 0, paymentMethod: 'cash' }
   ]);
@@ -61,11 +61,13 @@ function ExpenseForm({onClose}) {
       const updates = {};
       const timestamp = Date.now();
       const recordedAt = new Date().toISOString();
+      const bizId = localStorage.getItem("active_business_id");
+
 
       validExpenses.forEach((exp, index) => {
         // Create a unique ID for every single line item
         const individualId = `EXP-${timestamp}-${index}`;
-        const path = `businessData/${user.uid}/expenses/${individualId}`;
+        const path = `businessData/${bizId}/expenses/${individualId}`;
 
         updates[path] = {
           date: date, // The custom transaction date

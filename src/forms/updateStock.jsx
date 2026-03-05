@@ -14,8 +14,9 @@ export default function UpdateStock({ onClose, mode = "restock", product = null 
     // Load inventory from Firebase
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+            const bizId = localStorage.getItem("active_business_id");
             if (user) {
-                const inventoryRef = ref(db, `businessData/${user.uid}/inventory`);
+                const inventoryRef = ref(db, `businessData/${bizId}/inventory`);
                 const unsubscribeData = onValue(inventoryRef, (snapshot) => {
                     const data = snapshot.val();
                     if (data) {

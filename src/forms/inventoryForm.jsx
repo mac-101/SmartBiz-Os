@@ -75,11 +75,14 @@ function InventoryForm({ onSuccess, product = null }) {
     const user = auth.currentUser;
     if (!user) return alert("Please log in first");
 
+        const bizId = localStorage.getItem("active_business_id");
+
+
     try {
       const promises = products.flatMap((prod, index) => {
         const sku = prod.sku || `${prod.category.substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}-${index + 1}`;
-        const productPath = `businessData/${user.uid}/inventory/${sku}`;
-        const barcodePath = `businessData/${user.uid}/barcode/${prod.id}`;
+        const productPath = `businessData/${bizId}/inventory/${sku}`;
+        const barcodePath = `businessData/${bizId}/barcode/${prod.id}`; 
 
         return [
           set(ref(db, productPath), {

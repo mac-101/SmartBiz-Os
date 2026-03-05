@@ -14,8 +14,11 @@ export default function BarcodePrinter() {
   useEffect(() => {
     if (!user) return;
 
-    const barcodeRef = ref(db, `businessData/${user.uid}/barcode`);
-    const inventoryRef = ref(db, `businessData/${user.uid}/inventory`);
+        const bizId = localStorage.getItem("active_business_id");
+
+
+    const barcodeRef = ref(db, `businessData/${bizId}/barcode`);
+    const inventoryRef = ref(db, `businessData/${bizId}/inventory`);
 
     onValue(barcodeRef, (snapshot) => {
       const barcodeData = snapshot.val() || {};

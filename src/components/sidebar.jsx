@@ -28,6 +28,7 @@ const NAVIGATION = [
 export default function Sidebar({ active, onclick, handleLogout }) {
     const [bizInfo, setBizInfo] = useState({ businessName: "", businessType: "" });
 
+    // Consistently use userRole
     const userRole = localStorage.getItem("user_role") || "sales";
     const bizId = localStorage.getItem("active_business_id");
 
@@ -60,8 +61,9 @@ export default function Sidebar({ active, onclick, handleLogout }) {
 
     const businessInitial = bizInfo.businessName ? bizInfo.businessName[0].toUpperCase() : "?";
 
-    return (
+   return (
         <aside className="w-64 h-screen bg-white border-r border-slate-200 fixed left-0 top-0 flex flex-col z-50">
+            {/* ... Top Section ... */}
             <div className="h-16 flex items-center px-6 border-b border-slate-50">
                 <div className="flex items-center gap-2.5">
                     <div className="w-7 h-7 bg-slate-900 rounded-md flex items-center justify-center">
@@ -117,7 +119,19 @@ export default function Sidebar({ active, onclick, handleLogout }) {
                     >
                         <User size={18} /> Account
                     </button>
-                    {/* Badge for Clarity */}
+
+                    {/* --- FIXED: Corrected userRole check and nesting --- */}
+                    {(userRole === 'manager' || userRole === 'admin') && (
+                        <a 
+                            href="/pricing" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-50 transition-colors"
+                        >
+                            <ExternalLink size={18} /> Upgrade Plan
+                        </a>
+                    )}
+
                     <div className="mx-3 px-2 py-1.5 rounded-md bg-slate-50 border border-slate-100 mt-2">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Current Role</p>
                         <p className="text-xs font-bold text-blue-600 capitalize">{userRole}</p>
@@ -125,6 +139,7 @@ export default function Sidebar({ active, onclick, handleLogout }) {
                 </div>
             </div>
 
+            {/* ... Bottom Business Info Section ... */}
             <div className="p-4 bg-slate-50/50 border-t border-slate-100">
                 <div className="flex items-center gap-3 px-2 py-1 mb-4">
                     <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-inner border-2 border-white">

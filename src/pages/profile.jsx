@@ -10,15 +10,18 @@ function BusinessProfile() {
   const [businessData, setBusinessData] = useState(null);
   const [edit, setEdit] = useState(false);
   const navigate = useNavigate();
+  const bizId = localStorage.getItem("active_business_id");
+      const userRole = localStorage.getItem("user_role") || "sales";
 
   useEffect(() => {
     const user = auth.currentUser;
+
     if (!user) {
       navigate('/login');
       return;
     }
 
-    const businessRef = ref(db, `businessData/${user.uid}/businessInfo`);
+    const businessRef = ref(db, `businessData/${bizId}/businessInfo`);
     const unsubscribe = onValue(businessRef, (snapshot) => {
       setBusinessData(snapshot.val());
       setLoading(false);
@@ -96,12 +99,14 @@ function BusinessProfile() {
           <p className="text-sm text-gray-500">Overview of your registered business identity.</p>
         </div>
         <div className="flex gap-2">
-          <button
+          {userRole === 'admin' || userRole === 'manager' && (
+            <button
             onClick={() => setEdit(true)}
             className="flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <Edit size={16} /> Edit Profile
           </button>
+          )}
           <button
             onClick={downloadCardAsHTML}
             className="flex items-center gap-2 bg-blue-600 px-4 py-2 rounded-md text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-sm"

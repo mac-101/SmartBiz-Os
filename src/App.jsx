@@ -7,6 +7,9 @@ import BusinessLogin from './forms/login.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import FirstTimeWrapper from './firstTimeWrapper.jsx';
 import StaffSignup from './forms/staffSignUp.jsx';
+import PricingPage from './pages/pricing.jsx';
+
+
 
 function AppContent() {
   return (
@@ -23,6 +26,9 @@ function AppContent() {
           <Route path="/landingPage" element={<LandingPage />} />
           <Route path="/login" element={<BusinessLogin />} />
           <Route path="/staff-signup" element={<StaffSignup />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          {/* Catch-all redirect to dashboard */}
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </FirstTimeWrapper>
     </Router>

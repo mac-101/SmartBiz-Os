@@ -12,7 +12,7 @@ export default function Sales() {
   const [loading, setLoading] = useState(true);
   const [expandedRow, setExpandedRow] = useState(null);
   const [user, setUser] = useState(null);
-
+  const [userRole, setUserRole] = useState(localStorage.getItem("user_role") || "sales");
   const [timeFilter, setTimeFilter] = useState('week');
   const [productFilter, setProductFilter] = useState('all');
   const [customDate, setCustomDate] = useState('');
@@ -30,23 +30,33 @@ export default function Sales() {
   }, []);
 
   useEffect(() => {
-    // 1. Get the "Store Key" we saved during Login
     const bizId = localStorage.getItem("active_business_id");
-    
-    // 2. If no user or no bizId, don't try to fetch
     if (!user || !bizId) return;
 
-    // 3. Use bizId instead of user.uid
     const salesRef = ref(db, `businessData/${bizId}/sales`);
     
     const unsubscribe = onValue(salesRef, (snapshot) => {
       const data = snapshot.val();
-      setSales(data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : []);
+      if (data) {
+        const salesArray = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+        
+        // --- NEW FILTER LOGIC ---
+        // If user is 'sales' role, only show sales where sellerId matches their UID
+        if (userRole === "sales") {
+          const mySales = salesArray.filter(s => s.sellerId === user.uid);
+          setSales(mySales);
+        } else {
+          // Managers/Admins see everything
+          setSales(salesArray);
+        }
+      } else {
+        setSales([]);
+      }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [user]); // Keep 'user' here so it triggers when they log in
+  }, [user, userRole]); // Re-run if role changes // Keep 'user' here so it triggers when they log in
 
   // 1. FILTERED SALES (Must come first)
   const filteredSales = useMemo(() => {

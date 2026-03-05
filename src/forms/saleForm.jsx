@@ -16,9 +16,11 @@ export default function SaleForm({ onClose }) {
   const scanInputRef = useRef(null);
 
   useEffect(() => {
+    const bizId = localStorage.getItem("active_business_id");
+
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
-        const inventoryRef = ref(db, `businessData/${user.uid}/inventory`);
+        const inventoryRef = ref(db, `businessData/${bizId}/inventory`);
         const unsubscribeData = onValue(inventoryRef, (snapshot) => {
           const data = snapshot.val();
           if (data) {

@@ -42,8 +42,10 @@ export default function Inventory() {
   }, []);
 
   useEffect(() => {
+        const bizId = localStorage.getItem("active_business_id");
+
     if (!user) return;
-    const inventoryRef = ref(db, `businessData/${user.uid}/inventory`);
+    const inventoryRef = ref(db, `businessData/${bizId}/inventory`);
     const unsubscribe = onValue(inventoryRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {

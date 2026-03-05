@@ -41,13 +41,19 @@ function BusinessLogin() {
 
             if (staffMapSnap.exists()) {
                 // --- IT IS A STAFF ---
-                activeBusinessId = staffMapSnap.val().managerId;
-                userType = "staff";
+                const staffData = staffMapSnap.val();
+
+                activeBusinessId = staffData.managerId;
+
+                // This now works because staffData.role exists!
+                userType = staffData.role || "staff";
             } else {
                 // --- IT IS THE MANAGER ---
                 activeBusinessId = user.uid;
                 userType = "manager";
             }
+
+
 
             // 3. Save BOTH to the browser memory
             localStorage.setItem("active_business_id", activeBusinessId);

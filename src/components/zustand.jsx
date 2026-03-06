@@ -13,11 +13,11 @@ export const useBusinessStore = create((set, get) => ({
   subscribeToSales: (user) => {
     const bizId = getBizId();
     const role = getUserRole();
-    
+
     if (!bizId || !user) return;
 
     const salesRef = ref(db, `businessData/${bizId}/sales`);
-    
+
     // Returns the unsubscribe function automatically
     return onValue(salesRef, (snapshot) => {
       const data = snapshot.val();
@@ -28,12 +28,31 @@ export const useBusinessStore = create((set, get) => ({
         salesArray = salesArray.filter(s => s.sellerId === user.uid);
       }
 
-      set({ 
-        sales: salesArray, 
-        loading: { ...get().loading, sales: false } 
+      set({
+        sales: salesArray,
+        loading: { ...get().loading, sales: false }
       });
     });
   },
+
+  subScribeToExpense: (user) => {
+    const bizId = getBizId();
+
+    if (!bizId || !user) return;
+
+    const expenseRef = ref(db, `businessData/${bizId}/expenses`);
+
+    return onValue(expenseRef, (snapshot) => {
+      const data = snapshot.val()
+      let expenseArray = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+
+      set({
+        expenses: expenseArray,
+        loading: { ...get().loading, expenses: false }
+      })
+    })
+
+  }
 
   // Add more subscriptions here as needed (Expenses, Inventory, etc.)
 }));

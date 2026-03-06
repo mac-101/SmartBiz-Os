@@ -1,213 +1,142 @@
 import React, { useState, useEffect } from 'react';
 import { ref, set } from 'firebase/database';
 import { db, auth } from '../../firebase.config';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useBusinessStore } from "../components/zustand";
+import { Trash2, Plus, Box, X } from "lucide-react";
 
 function InventoryForm({ onSuccess, product = null }) {
+  const { plan, subscribeToPlan } = useBusinessStore();
   const [products, setProducts] = useState([
-    product
-      ? { ...product, id: Date.now() }
-      : { id: Date.now(), product: '', category: '', quantity: 0, cost: 0, price: 0, reorderLevel: 5, isBulk: false }
+    product ? { ...product, id: Date.now() } : { id: Date.now(), product: '', category: '', quantity: 0, cost: 0, price: 0, reorderLevel: 5, isBulk: false }
   ]);
-
   const [categories, setCategories] = useState(['Electronics', 'Furniture', 'Office Supplies', 'Accessories']);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCatName, setNewCatName] = useState('');
 
-  const addProduct = () => {
-    setProducts([...products, { id: Date.now(), product: '', category: '', quantity: 0, cost: 0, price: 0, reorderLevel: 5, isBulk: false }]);
-  };
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => u && subscribeToPlan?.(u));
+    return () => unsub();
+  }, [subscribeToPlan]);
 
-  const removeProduct = (id) => {
-    if (products.length > 1) {
-      setProducts(products.filter(prod => prod.id !== id));
+  const handleAddGeneralCategory = () => {
+    if (newCatName && !categories.includes(newCatName)) {
+      setCategories(prev => [...prev, newCatName]);
+      setNewCatName('');
+      setIsAddingCategory(false);
     }
   };
 
   const updateProduct = (id, field, value) => {
-    setProducts(products.map(prod => prod.id === id ? { ...prod, [field]: value } : prod));
-  };
-
-  // --- REVISED BULK LOGIC ---
-  const handleBulkCalculation = (id, cartonPrice, itemsPerCarton, numCartons) => {
-    const cPrice = parseFloat(cartonPrice) || 0;
-    const itemsPer = parseInt(itemsPerCarton) || 1;
-    const totalCartons = parseInt(numCartons) || 0;
-    
-    const unitCost = itemsPer > 0 ? (cPrice / itemsPer) : 0;
-    const totalPacks = itemsPer * totalCartons;
-
-    setProducts(products.map(prod =>
-      prod.id === id ? {
-        ...prod,
-        cost: unitCost.toFixed(2),      // Cost of 1 single pack
-        quantity: totalPacks,          // Total packs (e.g., 2 cartons * 40 = 80 packs)
-        tempCartonPrice: cartonPrice,
-        tempItemsPer: itemsPerCarton,
-        tempCartonQty: numCartons
-      } : prod
-    ));
-  };
-
-  const calculateTotalValue = () => {
-    return products.reduce((total, prod) =>
-      total + ((parseFloat(prod.cost) || 0) * (parseInt(prod.quantity) || 0)), 0
-    );
-  };
-
-  const getStockStatus = (qty, reorder) => {
-    const q = parseInt(qty) || 0;
-    const r = parseInt(reorder) || 0;
-    if (q === 0) return { text: 'Out of Stock', color: 'text-red-600', bg: 'bg-red-100' };
-    if (q <= r) return { text: 'Low Stock', color: 'text-amber-600', bg: 'bg-amber-100' };
-    return { text: 'In Stock', color: 'text-green-600', bg: 'bg-green-100' };
-  };
-
-  const handleCustomCategory = () => {
-    if (newCatName && !categories.includes(newCatName)) {
-      setCategories([...categories, newCatName]);
-      setIsAddingCategory(false);
-      setNewCatName('');
+    if (field === 'isBulk' && value === true && plan === '') {
+      alert("🚀 Bulk calculation is a Pro feature!");
+      return; 
     }
+    setProducts(products.map(p => p.id === id ? { ...p, [field]: value } : p));
   };
+
+  const handleBulkCalc = (id, cPrice, itemsPer, numCartons) => {
+    const unitCost = (parseFloat(cPrice) || 0) / (parseInt(itemsPer) || 1);
+    const totalQty = (parseInt(itemsPer) || 0) * (parseInt(numCartons) || 0);
+    setProducts(products.map(p => p.id === id ? { ...p, cost: unitCost.toFixed(2), quantity: totalQty, tmpP: cPrice, tmpI: itemsPer, tmpQ: numCartons } : p));
+  };
+
+  const calculateTotalValue = () => products.reduce((t, p) => t + ((parseFloat(p.cost) || 0) * (parseInt(p.quantity) || 0)), 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const user = auth.currentUser;
-    if (!user) return alert("Please log in first");
-
-        const bizId = localStorage.getItem("active_business_id");
-
-
+    const bizId = localStorage.getItem("active_business_id");
     try {
-      const promises = products.flatMap((prod, index) => {
-        const sku = prod.sku || `${prod.category.substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}-${index + 1}`;
-        const productPath = `businessData/${bizId}/inventory/${sku}`;
-        const barcodePath = `businessData/${bizId}/barcode/${prod.id}`; 
-
-        return [
-          set(ref(db, productPath), {
-            ...prod,
-            sku: sku,
-            lastUpdated: new Date().toISOString()
-          }),
-          set(ref(db, barcodePath), {
-            barcode: sku,
-            productId: prod.id
-          })
-        ];
-      });
-
-      await Promise.all(promises);
-      alert("Inventory Saved!");
+      await Promise.all(products.map((p, i) => {
+        const sku = p.sku || `${p.category.slice(0,3).toUpperCase()}-${Date.now().toString().slice(-4)}-${i+1}`;
+        return set(ref(db, `businessData/${bizId}/inventory/${sku}`), { ...p, sku, lastUpdated: new Date().toISOString() });
+      }));
+      alert("Saved!");
       onSuccess();
-      if (!product) setProducts([{ id: Date.now(), product: '', category: '', quantity: 0, cost: 0, price: 0, reorderLevel: 5, isBulk: false }]);
-    } catch (err) {
-      alert("Error saving: " + err.message);
-    }
+    } catch (err) { alert(err.message); }
   };
 
-  useEffect(() => {
-    if (product) setProducts([{ ...product, id: Date.now() }]);
-  }, [product]);
-
   return (
-    <div className='max-w-4xl mx-auto p-3 md:p-6 bg-white rounded-2xl'>
-      <h2 className='text-2xl font-bold text-gray-800 mb-6'>Manage Inventory</h2>
+    <div className='max-w-3xl mx-auto p-2 bg-white rounded-xl'>
+      <div className="flex justify-between items-center mb-4 px-2">
+        <h2 className='text-lg font-black text-slate-800'>Inventory</h2>
+        <button type="button" onClick={() => setIsAddingCategory(!isAddingCategory)} className="p-1.5 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200">
+          {isAddingCategory ? <X size={14}/> : <Plus size={14}/>}
+        </button>
+      </div>
 
-      <form onSubmit={handleSubmit} className='space-y-6'>
-        {products.map((prod, index) => {
-          const status = getStockStatus(prod.quantity, prod.reorderLevel);
-          const itemTotal = (parseFloat(prod.cost) || 0) * (parseInt(prod.quantity) || 0);
+      {isAddingCategory && (
+        <div className="mb-4 p-2 bg-blue-50 rounded-lg flex gap-2">
+          <input value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="New Category..." className="flex-1 p-1.5 text-xs rounded border" />
+          <button onClick={handleAddGeneralCategory} className="px-3 py-1 bg-blue-600 text-white rounded text-[10px] font-bold">ADD</button>
+        </div>
+      )}
 
-          return (
-            <div key={prod.id} className='p-4 border border-gray-200 rounded-xl bg-white space-y-4 shadow-sm'>
-              <div className='flex justify-between items-center'>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${status.bg} ${status.color}`}>{status.text}</span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={prod.isBulk || false}
-                    onChange={(e) => updateProduct(prod.id, 'isBulk', e.target.checked)}
-                    className="w-4 h-4 accent-orange-600"
-                  />
-                  <label className="text-xs font-bold text-orange-600">Buy in Cartons?</label>
-                </div>
+      <form onSubmit={handleSubmit} className='space-y-3'>
+        {products.map((prod) => (
+          <div key={prod.id} className='p-3 border border-slate-100 rounded-xl bg-white relative shadow-sm'>
+            {products.length > 1 && (
+              <button type="button" onClick={() => setProducts(products.filter(p => p.id !== prod.id))} className="absolute top-2 right-2 text-slate-300 hover:text-red-500"><Trash2 size={14} /></button>
+            )}
+
+            <div className='flex items-center gap-2 mb-2'>
+              <input type="checkbox" checked={prod.isBulk || false} onChange={(e) => updateProduct(prod.id, 'isBulk', e.target.checked)} className="w-3 h-3" />
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Bulk</label>
+            </div>
+
+            {prod.isBulk && (
+              <div className="grid grid-cols-3 gap-2 mb-3 p-2 bg-slate-50 rounded-lg">
+                <MiniInput label="Carton ₦" onChange={(v) => handleBulkCalc(prod.id, v, prod.tmpI, prod.tmpQ)} />
+                <MiniInput label="Units/C" onChange={(v) => handleBulkCalc(prod.id, prod.tmpP, v, prod.tmpQ)} />
+                <MiniInput label="Cartons" onChange={(v) => handleBulkCalc(prod.id, prod.tmpP, prod.tmpI, v)} />
               </div>
+            )}
 
-              {/* CARTON CALCULATOR */}
-              {prod.isBulk && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <div>
-                    <label className="text-[10px] font-bold uppercase text-orange-700">1 Carton Price (₦)</label>
-                    <input
-                      type="number"
-                      className="w-full p-2 text-sm rounded border border-orange-200"
-                      placeholder="Price you paid for 1 box"
-                      onChange={(e) => handleBulkCalculation(prod.id, e.target.value, prod.tempItemsPer, prod.tempCartonQty)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold uppercase text-orange-700">Packs per Carton</label>
-                    <input
-                      type="number"
-                      className="w-full p-2 text-sm rounded border border-orange-200"
-                      placeholder="Items inside 1 box"
-                      onChange={(e) => handleBulkCalculation(prod.id, prod.tempCartonPrice, e.target.value, prod.tempCartonQty)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold uppercase text-orange-700">How many Cartons?</label>
-                    <input
-                      type="number"
-                      className="w-full p-2 text-sm rounded border border-orange-200"
-                      placeholder="Number of boxes"
-                      onChange={(e) => handleBulkCalculation(prod.id, prod.tempCartonPrice, prod.tempItemsPer, e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* MAIN FORM FIELDS */}
-              <div className='grid grid-cols-2 md:grid-cols-5 gap-4'>
-                <div className="col-span-2">
-                  <label className='text-[10px] uppercase font-bold text-gray-400'>Product Name</label>
-                  <input required value={prod.product} onChange={(e) => updateProduct(prod.id, 'product', e.target.value)} className='w-full p-2 bg-gray-50 border rounded-md text-sm' />
-                </div>
-                <div>
-                  <label className='text-[10px] uppercase font-bold text-gray-400'>Packs (Total Qty)</label>
-                  <input type="number" value={prod.quantity} onChange={(e) => updateProduct(prod.id, 'quantity', e.target.value)} className='w-full p-2 bg-white border-2 border-gray-200 rounded-md text-sm font-bold' />
-                </div>
-                <div>
-                  <label className='text-[10px] uppercase font-bold text-gray-400'>Unit Cost (₦)</label>
-                  <input type="number" value={prod.cost} onChange={(e) => updateProduct(prod.id, 'cost', e.target.value)} className='w-full p-2 bg-white border-2 border-gray-200 rounded-md text-sm font-bold' />
-                </div>
-                <div>
-                  <label className='text-[10px] uppercase font-bold text-gray-400'>Selling Price (₦)</label>
-                  <input type="number" value={prod.price} onChange={(e) => updateProduct(prod.id, 'price', e.target.value)} className='w-full p-2 bg-white border-2 border-gray-200 rounded-md text-sm font-bold' />
-                </div>
-              </div>
-
-              <div className="text-right text-xs font-bold text-gray-400">
-                Item Stock Value: <span className="text-gray-700">₦{itemTotal.toLocaleString()}</span>
+            <div className='grid grid-cols-2 gap-3 mb-2'>
+              <FormInput label="Product" value={prod.product} onChange={(v) => updateProduct(prod.id, 'product', v)} />
+              <div className="flex flex-col">
+                <label className='text-[9px] uppercase font-bold text-slate-400'>Category</label>
+                <select value={prod.category} onChange={(e) => updateProduct(prod.id, 'category', e.target.value)} className='p-1.5 bg-slate-50 rounded text-xs border-none ring-1 ring-slate-100'>
+                  <option value="">-</option>
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
             </div>
-          );
-        })}
 
-        <div className='p-6 bg-green-700 rounded-2xl text-white flex justify-between items-center'>
-          <div>
-            <p className='text-xs opacity-80 uppercase font-bold'>Total Inventory Value (Cost)</p>
-            <h3 className='text-3xl font-black'>₦{calculateTotalValue().toLocaleString()}</h3>
+            <div className='grid grid-cols-3 gap-3'>
+              <FormInput label="Qty" type="number" value={prod.quantity} onChange={(v) => updateProduct(prod.id, 'quantity', v)} />
+              <FormInput label="Cost" type="number" value={prod.cost} onChange={(v) => updateProduct(prod.id, 'cost', v)} />
+              <FormInput label="Price" type="number" value={prod.price} onChange={(v) => updateProduct(prod.id, 'price', v)} />
+            </div>
           </div>
+        ))}
+
+        <div className='p-4 bg-slate-900 rounded-xl text-white flex justify-between items-center'>
+          <h3 className='text-lg font-black'>₦{calculateTotalValue().toLocaleString()}</h3>
+          <span className="text-[10px] opacity-50 uppercase tracking-widest">Total Value</span>
         </div>
 
-        <div className='flex gap-4'>
-          <button type="button" onClick={addProduct} className='flex-1 py-3 border-2 border-dashed border-gray-300 rounded-xl font-bold text-gray-500 hover:bg-gray-50'>+ Add Another Item</button>
-          <button type="submit" className='flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-black'>Complete Purchase</button>
+        <div className='flex gap-2'>
+          <button type="button" onClick={() => setProducts([...products, { id: Date.now(), product: '', category: '', quantity: 0, cost: 0, price: 0, reorderLevel: 5, isBulk: false }])} className='flex-1 py-2 border border-dashed border-slate-200 rounded-lg text-[11px] font-bold text-slate-400'>+ Add Item</button>
+          <button type="submit" className='flex-1 py-2 bg-blue-600 text-white rounded-lg text-[11px] font-bold shadow-md'>Save All</button>
         </div>
       </form>
     </div>
   );
 }
+
+const FormInput = ({ label, value, onChange, type = "text" }) => (
+  <div className="flex flex-col">
+    <label className='text-[9px] uppercase font-bold text-slate-400 mb-0.5'>{label}</label>
+    <input type={type} value={value} onChange={(e) => onChange(e.target.value)} className='p-1.5 bg-slate-50 rounded text-xs ring-1 ring-slate-100' />
+  </div>
+);
+
+const MiniInput = ({ label, onChange }) => (
+  <div className="flex flex-col">
+    <label className="text-[8px] font-bold text-blue-600 uppercase mb-0.5">{label}</label>
+    <input type="number" className="p-1 text-[10px] rounded border-none ring-1 ring-blue-100" onChange={(e) => onChange(e.target.value)} />
+  </div>
+);
 
 export default InventoryForm;

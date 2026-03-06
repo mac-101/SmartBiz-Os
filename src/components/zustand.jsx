@@ -3,31 +3,24 @@ import { onValue, ref } from 'firebase/database';
 import { db } from "../../firebase.config";
 
 const getBizId = () => localStorage.getItem("active_business_id");
-const getUserRole = () => localStorage.getItem("user_role") || "sales";
 
+// stores.js
 export const useBusinessStore = create((set, get) => ({
   sales: [],
   expenses: [],
+  plan: "free",
   loading: { sales: true, expenses: true },
 
   subscribeToSales: (user) => {
-    const bizId = getBizId();
-    const role = getUserRole();
-
+    const bizId = localStorage.getItem("active_business_id");
     if (!bizId || !user) return;
 
     const salesRef = ref(db, `businessData/${bizId}/sales`);
-
-    // Returns the unsubscribe function automatically
     return onValue(salesRef, (snapshot) => {
       const data = snapshot.val();
-      let salesArray = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+      const salesArray = data ? Object.keys(data).map(k => ({ id: k, ...data[k] })) : [];
 
-      // Filter logic moved into the store
-      if (role === "sales") {
-        salesArray = salesArray.filter(s => s.sellerId === user.uid);
-      }
-
+      // FIX: You must update the loading state to false here!
       set({
         sales: salesArray,
         loading: { ...get().loading, sales: false }
@@ -35,24 +28,33 @@ export const useBusinessStore = create((set, get) => ({
     });
   },
 
-  subScribeToExpense: (user) => {
-    const bizId = getBizId();
-
+  subscribeToExpense: (user) => {
+    const bizId = localStorage.getItem("active_business_id");
     if (!bizId || !user) return;
 
     const expenseRef = ref(db, `businessData/${bizId}/expenses`);
-
+    // Inside subscribeToExpense in stores.js
     return onValue(expenseRef, (snapshot) => {
-      const data = snapshot.val()
-      let expenseArray = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+      const data = snapshot.val();
+      const expenseArray = data ? Object.keys(data).map(k => ({ id: k, ...data[k] })) : [];
 
+      // This is the line that kills the "blank" screen
       set({
         expenses: expenseArray,
         loading: { ...get().loading, expenses: false }
-      })
-    })
+      });
+    });
+  },
 
+
+  subscribeToPlan : (user) => {
+    const bizId = localStorage.getItem("active_business_id");
+    if (!bizId || !user) return;
+
+      const planRef = ref(db, `businessData/${bizId}/businessInfo/subscription/plan`);
+    return onValue(planRef, (snapshot) => {
+      const data = snapshot.val();
+      set({ plan: data || "free" });
+    });
   }
-
-  // Add more subscriptions here as needed (Expenses, Inventory, etc.)
 }));

@@ -3,6 +3,8 @@ import FinancialChart from "../components/chart";
 import { ref, onValue } from "firebase/database";
 import { db, auth } from "../../firebase.config";
 import { onAuthStateChanged } from 'firebase/auth';
+import { useBusinessStore } from "../components/zustand"; // Ensure this path is correct
+
 import {
     Download,
     ArrowUpRight,
@@ -16,10 +18,10 @@ import {
 export default function Dashboard() {
     const [timeFilter, setTimeFilter] = useState('today');
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
 
-    const [sales, setSales] = useState([]);
-    const [expenses, setExpenses] = useState([]);
+    // const { sales, loading,  } = useBusinessStore();
+const { sales, expenses, loading, plan, subscribeToSales, subscribeToExpense, subscribeToPlan } = useBusinessStore();
+    // const [expenses, setExpenses] = useState([]);
     const [inventoryItems, setInventoryItems] = useState(0);
     const [lowStockAlerts, setLowStockAlerts] = useState(0);
 
@@ -47,30 +49,30 @@ export default function Dashboard() {
     };
 
     const isDateInRange = (dateStr, range) => {
-    if (!dateStr) return false;
-    // Extract YYYY-MM-DD from the ISO string or displayDate
-    const d = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
-    return d >= range.start && d <= range.end;
-};
-
-   const filteredData = useMemo(() => {
-    const range = getDateRange(timeFilter);
-    
-    // Filter sales based on the date
-    const filteredSales = sales.filter(s => isDateInRange(s.date, range));
-    
-    // Filter expenses based on the date
-    const filteredExpenses = expenses.filter(e => isDateInRange(e.date, range));
-
-    return {
-        sales: filteredSales,
-        expenses: filteredExpenses,
-        // FIX: Use grandTotal because that is what your handleSubmit saves
-        totalSales: filteredSales.reduce((a, c) => a + (Number(c.grandTotal) || 0), 0),
-        // FIX: Ensure expenses use 'amount'
-        totalExpenses: filteredExpenses.reduce((a, c) => a + (Number(c.amount) || 0), 0),
+        if (!dateStr) return false;
+        // Extract YYYY-MM-DD from the ISO string or displayDate
+        const d = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+        return d >= range.start && d <= range.end;
     };
-}, [timeFilter, sales, expenses]);
+
+    const filteredData = useMemo(() => {
+        const range = getDateRange(timeFilter);
+
+        // Filter sales based on the date
+        const filteredSales = sales.filter(s => isDateInRange(s.date, range));
+
+        // Filter expenses based on the date
+        const filteredExpenses = expenses.filter(e => isDateInRange(e.date, range));
+
+        return {
+            sales: filteredSales,
+            expenses: filteredExpenses,
+            // FIX: Use grandTotal because that is what your handleSubmit saves
+            totalSales: filteredSales.reduce((a, c) => a + (Number(c.grandTotal) || 0), 0),
+            // FIX: Ensure expenses use 'amount'
+            totalExpenses: filteredExpenses.reduce((a, c) => a + (Number(c.amount) || 0), 0),
+        };
+    }, [timeFilter, sales, expenses]);
 
     // --- Export Logic ---
     const handleExportReport = () => {
@@ -89,67 +91,85 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (u) => {
+        let unsubSales;
+         let unsubExpense;
+         let unsubPlan;
+
+        const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
             setUser(u);
-            if (!u) setLoading(false);
+            if (u) {
+                // Start the real-time listener from Zustand
+                unsubSales = subscribeToSales(u);
+                unsubExpense = subscribeToExpense(u);
+                unsubPlan = subscribeToPlan(u);
+
+            }
         });
-        return () => unsubscribe();
+
+
+        return () => {
+            unsubscribeAuth();
+            if (unsubSales) unsubSales();
+            if (unsubExpense) unsubExpense()
+            if (unsubPlan) unsubPlan();
+        };
     }, []);
 
     useEffect(() => {
-    // 1. Get the Store Key from storage
-    const bizId = localStorage.getItem("active_business_id");
+        // 1. Get the Store Key from storage
+        const bizId = localStorage.getItem("active_business_id");
 
-    // 2. Stop if no user or no bizId
-    if (!user || !bizId) return;
+        // 2. Stop if no user or no bizId
+        if (!user || !bizId) return;
 
-    // 3. Set up the paths using bizId
-    const salesRef = ref(db, `businessData/${bizId}/sales`);
-    const expensesRef = ref(db, `businessData/${bizId}/expenses`);
-    const inventoryRef = ref(db, `businessData/${bizId}/inventory`);
+        // 3. Set up the paths using bizId
+        // const salesRef = ref(db, `businessData/${bizId}/sales`);
+        // const expensesRef = ref(db, `businessData/${bizId}/expenses`);
+        const inventoryRef = ref(db, `businessData/${bizId}/inventory`);
 
-    // FETCH SALES (Using the Flat Logic from your Sales Page)
-    const unsubS = onValue(salesRef, (snap) => {
-        const data = snap.val();
-        // If data exists, map it; otherwise, empty array
-        const allSales = data ? Object.keys(data).map(key => ({ 
-            id: key, 
-            ...data[key] 
-        })) : [];
+        // FETCH SALES (Using the Flat Logic from your Sales Page)
+        // const unsubS = onValue(salesRef, (snap) => {
+        //     const data = snap.val();
+        //     // If data exists, map it; otherwise, empty array
+        //     const allSales = data ? Object.keys(data).map(key => ({
+        //         id: key,
+        //         ...data[key]
+        //     })) : [];
 
-        // Sort by date (Newest first)
-        allSales.sort((a, b) => new Date(b.date) - new Date(a.date));
-        setSales(allSales);
-    });
+        //     // Sort by date (Newest first)
+        //     allSales.sort((a, b) => new Date(b.date) - new Date(a.date));
+        //     setSales(allSales);
+        // });
 
-    // FETCH EXPENSES
-    const unsubE = onValue(expensesRef, (snap) => {
-        const data = snap.val();
-        const allExpenses = data ? Object.keys(data).map(key => ({ 
-            id: key, 
-            ...data[key] 
-        })) : [];
-        setExpenses(allExpenses);
-    });
+        // // FETCH EXPENSES
+        // const unsubE = onValue(expensesRef, (snap) => {
+        //     const data = snap.val();
+        //     const allExpenses = data ? Object.keys(data).map(key => ({
+        //         id: key,
+        //         ...data[key]
+        //     })) : [];
+        //     setExpenses(allExpenses);
+        // });
 
-    // FETCH INVENTORY
-    const unsubI = onValue(inventoryRef, (snap) => {
-        const val = snap.val() || {};
-        const list = Object.values(val);
-        setInventoryItems(list.length);
-        setLowStockAlerts(list.filter(i => (Number(i.quantity) || 0) < 5).length);
-        setLoading(false);
-    });
+        // FETCH INVENTORY
+        const unsubI = onValue(inventoryRef, (snap) => {
+            const val = snap.val() || {};
+            const list = Object.values(val);
+            setInventoryItems(list.length);
+            setLowStockAlerts(list.filter(i => (Number(i.quantity) || 0) < 5).length);
+            // setLoading(false);
+        });
 
-    return () => {
-        unsubS();
-        unsubE();
-        unsubI();
-    };
-}, [user]); // user is the only dependency needed
+        return () => {
+            // unsubS();
+            // unsubE();
+            unsubI();
+        };
+    }, [user]); // user is the only dependency needed
 
-    if (loading) return <DashboardSkeleton />;
-
+if (loading.sales || loading.expenses) {
+    return <DashboardSkeleton />;
+}
     return (
         <div className="max-w-[1600px] mx-auto p-2 lg:p-6 min-h-screen bg-[#F9FAFB] space-y-8">
             {/* Header */}
@@ -172,7 +192,7 @@ export default function Dashboard() {
                         ))}
                     </div>
                     <button
-                        onClick={handleExportReport}
+                        onClick={ plan === 'Free Trial' ? () => alert('Upgrade to Pro to access this feature') : (plan !== 'Free Trial') ? handleExportReport : null}
                         className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-all shadow-sm"
                     >
                         <Download size={14} />

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 export default function Expenses() {
-  const { expenses, loading: storeLoading, subscribeToExpense } = useBusinessStore();
+  const { expenses, loading, subscribeToExpense } = useBusinessStore();
   const [user, setUser] = useState(null);
 
   const [sortOrder, setSortOrder] = useState('newest');
@@ -25,7 +25,7 @@ export default function Expenses() {
   const [selectedDate, setSelectedDate] = useState('');
 
   useEffect(() => {
-        let unsubExpense;
+    let unsubExpense;
 
     const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -34,12 +34,13 @@ export default function Expenses() {
 
       };
     });
-    return () =>{
+    return () => {
       if (unsubExpense) unsubExpense()
-       unsubscribeAuth()};
+      unsubscribeAuth()
+    };
   }, []);
 
-  
+
 
   const filteredExpenses = useMemo(() => {
     let result = [...expenses];
@@ -100,7 +101,7 @@ export default function Expenses() {
     highest: filteredExpenses.length > 0 ? Math.max(...filteredExpenses.map(e => e.amount)) : 0
   };
 
-  if (storeLoading) return <ExpensesSkeleton />;
+  if (loading.expenses) return <ExpensesSkeleton />;
 
   return (
     <div className="max-w-[1600px] mx-auto p-2 lg:p-6 space-y-8 bg-[#FDFDFF] min-h-screen">

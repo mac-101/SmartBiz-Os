@@ -2,64 +2,50 @@ import React, { useState, useMemo, useEffect } from "react";
 import { ref, onValue, remove } from "firebase/database";
 import { db, auth } from "../../firebase.config";
 import { onAuthStateChanged } from 'firebase/auth';
+import { useBusinessStore } from "../components/zustand"; // Ensure this path is correct
 import { 
-  Trash2, Download, ShoppingCart, TrendingUp, Calendar, 
-  Filter, ArrowUpRight, PackageCheck, User, ChevronDown, ChevronUp, Box
+  Trash2, ShoppingCart, TrendingUp, Calendar, 
+  ArrowUpRight, PackageCheck, ChevronDown, ChevronUp, Box
 } from "lucide-react";
 
 export default function Sales() {
-  const [sales, setSales] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Pulling from Zustand Store
+  const { sales, loading: storeLoading, subscribeToSales } = useBusinessStore();
+  
   const [expandedRow, setExpandedRow] = useState(null);
   const [user, setUser] = useState(null);
-  const [userRole, setUserRole] = useState(localStorage.getItem("user_role") || "sales");
   const [timeFilter, setTimeFilter] = useState('week');
   const [productFilter, setProductFilter] = useState('all');
   const [customDate, setCustomDate] = useState('');
+
+  // Get active business ID for delete operations
+  const bizId = localStorage.getItem("active_business_id");
 
   const toggleRow = (id) => {
     setExpandedRow(expandedRow === id ? null : id);
   };
 
   useEffect(() => {
+    let unsubSales;
+
     const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
       setUser(u);
-      if (!u) setLoading(false);
-    });
-    return () => unsubscribeAuth();
-  }, []);
-
-  useEffect(() => {
-    const bizId = localStorage.getItem("active_business_id");
-    if (!user || !bizId) return;
-
-    const salesRef = ref(db, `businessData/${bizId}/sales`);
-    
-    const unsubscribe = onValue(salesRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const salesArray = Object.keys(data).map(key => ({ id: key, ...data[key] }));
-        
-        // --- NEW FILTER LOGIC ---
-        // If user is 'sales' role, only show sales where sellerId matches their UID
-        if (userRole === "sales") {
-          const mySales = salesArray.filter(s => s.sellerId === user.uid);
-          setSales(mySales);
-        } else {
-          // Managers/Admins see everything
-          setSales(salesArray);
-        }
-      } else {
-        setSales([]);
+      if (u) {
+        // Start the real-time listener from Zustand
+        unsubSales = subscribeToSales(u);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [user, userRole]); // Re-run if role changes // Keep 'user' here so it triggers when they log in
+    return () => {
+      unsubscribeAuth();
+      if (unsubSales) unsubSales(); 
+    };
+  }, [subscribeToSales]);
 
-  // 1. FILTERED SALES (Must come first)
+
+  // 1. FILTERED SALES
   const filteredSales = useMemo(() => {
+    if (!sales) return [];
     let result = [...sales];
     const today = new Date();
     const formatDate = (d) => d.toISOString().split('T')[0];
@@ -88,7 +74,7 @@ export default function Sales() {
     return result.sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [sales, timeFilter, productFilter, customDate]);
 
-  // 2. STATS (Depends on filteredSales)
+  // 2. STATS
   const stats = useMemo(() => {
     return filteredSales.reduce((acc, s) => {
       acc.revenue += (Number(s.grandTotal) || 0);
@@ -101,11 +87,13 @@ export default function Sales() {
   const avgTicket = filteredSales.length > 0 ? stats.revenue / filteredSales.length : 0;
 
   const uniqueProducts = useMemo(() => {
+    if (!sales) return ['all'];
     const allNames = sales.flatMap(s => s.items?.map(i => i.productName) || []);
     return ['all', ...new Set(allNames.filter(Boolean))];
   }, [sales]);
 
-  if (loading) return <SalesSkeleton />;
+  // Use the store's loading state for sales specifically
+  if (storeLoading.sales) return <SalesSkeleton />;
 
   return (
     <div className="max-w-[1600px] mx-auto p-2 lg:p-6 space-y-8 bg-[#FDFDFF] min-h-screen">
@@ -113,12 +101,12 @@ export default function Sales() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <SaleStat label="Gross Revenue" value={`₦${stats.revenue.toLocaleString()}`} icon={<TrendingUp size={18}/>} color="emerald" sub={`Total from ${filteredSales.length} sales`} />
-        <SaleStat label="Units Moved" value={stats.units} icon={<PackageCheck size={18}/>} color="blue" sub="Items across all receipts" />
+        <SaleStat label="Units Moved" value={stats.units.toLocaleString()} icon={<PackageCheck size={18}/>} color="blue" sub="Items across all receipts" />
         <SaleStat label="Avg. Order Value" value={`₦${Math.round(avgTicket).toLocaleString()}`} icon={<ArrowUpRight size={18}/>} color="slate" sub="Revenue per customer" />
       </div>
 
       {/* Control Bar */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm flex flex-wrap items-center gap-6">
+      <div className="bg-white rounded-2xl p-4 shadow-sm flex flex-wrap items-center gap-6 border border-slate-100">
         <div className="flex items-center gap-3">
           <Calendar size={14} className="text-slate-400" />
           <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="text-sm font-bold text-slate-700 bg-transparent outline-none cursor-pointer">
@@ -129,7 +117,7 @@ export default function Sales() {
           </select>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 border-l pl-6 border-slate-100">
           <ShoppingCart size={14} className="text-slate-400" />
           <select value={productFilter} onChange={(e) => setProductFilter(e.target.value)} className="text-sm font-bold text-slate-700 bg-transparent outline-none cursor-pointer">
             {uniqueProducts.map(p => <option key={p} value={p}>{p === 'all' ? 'All Products' : p}</option>)}
@@ -165,21 +153,29 @@ export default function Sales() {
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-sm font-bold text-slate-800">{sale.customer || 'Walk-in'}</span>
+                    <span className="text-sm font-bold text-slate-800">{sale.customerName || sale.customer || 'Walk-in'}</span>
                   </td>
                   <td className="px-6 py-5 text-center">
                     <span className="px-2.5 py-1 bg-slate-100 rounded-lg text-[10px] font-black text-slate-500">
-                      {sale.items?.length || 0} PRODUCTS
+                      {(sale.items?.length || 0)} {sale.items?.length === 1 ? 'ITEM' : 'ITEMS'}
                     </span>
                   </td>
                   <td className="px-6 py-5">
                     <span className="text-sm font-black text-slate-900">₦{Number(sale.grandTotal).toLocaleString()}</span>
                   </td>
                   <td className="px-6 py-5 text-xs font-bold text-slate-400">
-                    {sale.displayDate || (sale.date ? new Date(sale.date).toLocaleDateString() : 'N/A')}
+                    {sale.date ? new Date(sale.date).toLocaleDateString('en-GB') : 'N/A'}
                   </td>
                   <td className="px-6 py-5 text-right">
-                    <button onClick={(e) => { e.stopPropagation(); if(window.confirm("Delete this sale?")) remove(ref(db, `businessData/${user.uid}/sales/${sale.id}`)); }} className="text-slate-300 hover:text-red-500">
+                    <button 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        if(window.confirm("Permanent delete? This cannot be undone.")) {
+                          remove(ref(db, `businessData/${bizId}/sales/${sale.id}`));
+                        }
+                      }} 
+                      className="text-slate-300 hover:text-red-500 transition-colors"
+                    >
                       <Trash2 size={16} />
                     </button>
                   </td>
@@ -188,14 +184,14 @@ export default function Sales() {
                 {expandedRow === sale.id && (
                   <tr>
                     <td colSpan="6" className="px-6 py-4 bg-slate-50/50">
-                      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-inner mx-4">
+                      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm mx-4">
                         <table className="w-full">
                           <thead className="bg-slate-50">
                             <tr>
-                              <th className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase text-left">Product Name</th>
-                              <th className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase text-center">Quantity</th>
+                              <th className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase text-left">Product</th>
+                              <th className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase text-center">Qty</th>
                               <th className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase text-right">Unit Price</th>
-                              <th className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase text-right">Total</th>
+                              <th className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase text-right">Subtotal</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
@@ -226,6 +222,13 @@ export default function Sales() {
                 )}
               </React.Fragment>
             ))}
+            {filteredSales.length === 0 && (
+              <tr>
+                <td colSpan="6" className="py-20 text-center text-slate-400 font-bold text-sm italic">
+                  No sales found for the selected period.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table> 
        </div>
@@ -234,9 +237,6 @@ export default function Sales() {
   );
 }
 
-// ... SaleStat and SalesSkeleton remain the same
-      
-// Re-using your components for styling consistency
 function SaleStat({ label, value, icon, color, sub }) {
   const themes = {
     emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
@@ -245,11 +245,11 @@ function SaleStat({ label, value, icon, color, sub }) {
   };
   return (
     <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all flex items-center gap-4 md:flex-col md:items-start">
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border mb-4 ${themes[color]}`}>{icon}</div>
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${themes[color]}`}>{icon}</div>
       <div>
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-      <h3 className="text-2xl font-black text-slate-900 mt-1">{value}</h3>
-      <p className="text-[11px] font-bold text-slate-400 mt-1">{sub}</p>
+        <h3 className="text-2xl font-black text-slate-900 mt-1">{value}</h3>
+        <p className="text-[11px] font-bold text-slate-400 mt-1">{sub}</p>
       </div>
     </div>
   );
@@ -257,12 +257,13 @@ function SaleStat({ label, value, icon, color, sub }) {
 
 function SalesSkeleton() {
   return (
-    <div className="p-6 space-y-8 animate-pulse bg-white min-h-screen">
-      <div className="h-10 w-48 bg-slate-50 rounded-xl"></div>
-      <div className="grid grid-cols-3 gap-6">
-        {[1,2,3].map(i => <div key={i} className="h-36 bg-slate-50 rounded-3xl border border-slate-100"></div>)}
+    <div className="p-6 space-y-8 animate-pulse bg-[#FDFDFF] min-h-screen">
+      <div className="h-8 w-48 bg-slate-200 rounded-xl"></div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1,2,3].map(i => <div key={i} className="h-32 bg-white rounded-3xl border border-slate-100"></div>)}
       </div>
-      <div className="h-96 bg-slate-50 rounded-3xl border border-slate-100"></div>
+      <div className="h-16 bg-white rounded-2xl border border-slate-100"></div>
+      <div className="h-96 bg-white rounded-3xl border border-slate-100"></div>
     </div>
   );
 }
